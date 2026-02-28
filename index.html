@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DataViz — AirOps</title>
+  <style>
+    @font-face { font-family: 'Serrif VF'; src: url('fonts/SerrifVF.ttf') format('truetype'); font-weight: 100 900; }
+    @font-face { font-family: 'Saans'; src: url('fonts/Saans-Regular.ttf') format('truetype'); font-weight: 400; }
+    @font-face { font-family: 'Saans'; src: url('fonts/Saans-Medium.ttf') format('truetype'); font-weight: 500; }
+    @font-face { font-family: 'Saans'; src: url('fonts/Saans-Bold.ttf') format('truetype'); font-weight: 700; }
+    @font-face { font-family: 'Saans Mono'; src: url('fonts/SaansMono-Medium.ttf') format('truetype'); font-weight: 500; }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; }
+    body { font-family: 'Saans', 'Helvetica Neue', sans-serif; font-size: 13px; background: #f0f0ee; color: #000d05; display: flex; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 272px; flex-shrink: 0;
+      background: #fff; border-right: 1px solid #d4e8da;
+      display: flex; flex-direction: column;
+      height: 100vh; overflow-y: auto;
+    }
+    .sidebar-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 14px 16px; border-bottom: 1px solid #d4e8da;
+      position: sticky; top: 0; background: #fff; z-index: 10;
+    }
+    .sidebar-logo { font-family: 'Saans', sans-serif; font-weight: 700; font-size: 15px; color: #000d05; letter-spacing: -0.02em; }
+    .sidebar-title { font-family: 'Saans Mono', 'DM Mono', monospace; font-size: 12px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: #676c79; }
+
+    .control-section { padding: 16px; border-bottom: 1px solid #ecedef; }
+    .control-label {
+      font-family: 'Saans Mono', 'DM Mono', monospace; font-size: 11px; font-weight: 500;
+      letter-spacing: 0.08em; text-transform: uppercase; color: #676c79;
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .control-label .count { color: #a5aab6; }
+    .field-label {
+      font-family: 'Saans Mono', 'DM Mono', monospace; font-size: 10px; font-weight: 500;
+      letter-spacing: 0.08em; text-transform: uppercase; color: #a5aab6; margin-bottom: 5px; display: block;
+    }
+    .field-group { margin-bottom: 12px; }
+    .field-group:last-child { margin-bottom: 0; }
+
+    input[type="text"], textarea {
+      width: 100%; padding: 8px 10px;
+      font-family: 'Saans', sans-serif; font-size: 13px; color: #000d05;
+      background: #f8fffb; border: 1px solid #d4e8da; outline: none;
+      border-radius: 0; transition: border-color 0.15s;
+    }
+    input[type="text"]:focus, textarea:focus { border-color: #008c44; }
+    textarea { min-height: 100px; resize: vertical; line-height: 1.5; font-family: 'Saans Mono', 'DM Mono', monospace; font-size: 12px; }
+
+    /* ── Chart type grid ── */
+    .chart-type-grid { display: flex; gap: 6px; flex-wrap: wrap; }
+    .chart-type-btn {
+      width: 52px; cursor: pointer; text-align: center;
+      border: 2px solid #ecedef; background: #fff; padding: 0; transition: all 0.15s;
+    }
+    .chart-type-btn:hover { border-color: #008c44; }
+    .chart-type-btn.active { border-color: #008c44; background: #f8fffb; }
+    .chart-thumb { width: 52px; height: 44px; display: block; }
+    .chart-type-label {
+      font-family: 'Saans Mono', 'DM Mono', monospace; font-size: 9px; font-weight: 500;
+      letter-spacing: 0.06em; text-transform: uppercase; color: #676c79;
+      padding: 4px 2px; display: block; line-height: 1.2;
+    }
+    .chart-type-btn.active .chart-type-label { color: #008c44; }
+
+    /* ── Toggle ── */
+    .toggle-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .toggle-row:last-child { margin-bottom: 0; }
+    .toggle-row span { font-family: 'Saans Mono', 'DM Mono', monospace; font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: #676c79; }
+    .toggle { position: relative; display: inline-block; width: 36px; height: 20px; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider { position: absolute; inset: 0; background: #d4e8da; cursor: pointer; transition: 0.2s; }
+    .toggle input:checked + .toggle-slider { background: #000d05; }
+    .toggle-slider::before { content: ''; position: absolute; height: 14px; width: 14px; left: 3px; bottom: 3px; background: #fff; transition: 0.2s; }
+    .toggle input:checked + .toggle-slider::before { transform: translateX(16px); }
+
+    /* ── Color mode ── */
+    .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+    .mode-btn {
+      padding: 8px 4px; border: 1px solid #d4e8da; background: #fff;
+      font-family: 'Saans Mono', 'DM Mono', monospace; font-size: 11px; font-weight: 500;
+      letter-spacing: 0.06em; text-transform: uppercase; color: #676c79; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .mode-btn:hover { border-color: #008c44; }
+    .mode-btn.active { background: #000d05; color: #fff; border-color: #000d05; }
+
+    /* ── Highlight ── */
+    .highlight-row { display: flex; align-items: center; gap: 8px; }
+    select {
+      flex: 1; padding: 7px 8px;
+      font-family: 'Saans Mono', 'DM Mono', monospace; font-size: 11px; font-weight: 500;
+      letter-spacing: 0.04em; text-transform: uppercase;
+      background: #f8fffb; border: 1px solid #d4e8da; color: #000d05;
+      border-radius: 0; outline: none; cursor: pointer; appearance: none;
+    }
+
+    /* ── Export sizes ── */
+    .size-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+    .size-btn {
+      padding: 8px; border: 1px solid #d4e8da; background: #fff; cursor: pointer;
+      text-align: center; transition: all 0.15s;
+    }
+    .size-btn:hover { border-color: #008c44; }
+    .size-btn.active { border-color: #008c44; background: #f8fffb; }
+    .size-dims { font-family: 'Saans Mono', 'DM Mono', monospace; font-size: 11px; font-weight: 500; letter-spacing: 0.04em; color: #000d05; display: block; }
+    .size-label { font-family: 'Saans Mono', 'DM Mono', monospace; font-size: 10px; color: #008c44; text-transform: uppercase; letter-spacing: 0.04em; }
+
+    /* ── Download ── */
+    .sidebar-footer { padding: 16px; margin-top: auto; border-top: 1px solid #ecedef; }
+    .download-btn {
+      width: 100%; padding: 12px; background: #000d05; color: #fff; border: none;
+      font-family: 'Saans Mono', 'DM Mono', monospace; font-size: 12px; font-weight: 500;
+      letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer;
+      transition: background 0.15s; display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .download-btn:hover { background: #002910; }
+    .download-btn:active { background: #008c44; }
+    .download-btn.loading { opacity: 0.6; pointer-events: none; }
+
+    /* ── Preview area ── */
+    .preview-area { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .preview-topbar {
+      background: #fff; border-bottom: 1px solid #d4e8da;
+      padding: 0 20px; height: 46px;
+      display: flex; align-items: center; gap: 16px;
+      font-family: 'Saans Mono', 'DM Mono', monospace; font-size: 11px; font-weight: 500;
+      letter-spacing: 0.06em; text-transform: uppercase; color: #a5aab6;
+      flex-shrink: 0;
+    }
+    .preview-topbar span { color: #000d05; }
+    .preview-topbar .sep { color: #d4e8da; }
+    .fonts-badge {
+      margin-left: auto; padding: 4px 10px; border: 1px solid #d4e8da;
+      color: #008c44; font-size: 10px; letter-spacing: 0.08em;
+    }
+
+    .preview-stage {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      padding: 32px; overflow: hidden;
+      background: #e8e8e6;
+      background-image: linear-gradient(rgba(0,0,0,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.04) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+
+    .chart-preview-wrap {
+      display: flex; align-items: center; justify-content: center;
+      max-width: 100%; max-height: 100%;
+    }
+    #chart-canvas {
+      background: #fff;
+      box-shadow: 0 4px 32px rgba(0,0,0,0.14), 0 1px 4px rgba(0,0,0,0.08);
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+    #chart-canvas svg { display: block; }
+  </style>
+</head>
+<body>
+
+<!-- ── Sidebar ────────────────────────────────────────── -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <span class="sidebar-logo">airops</span>
+    <span class="sidebar-title">DataViz</span>
+  </div>
+
+  <!-- Chart type -->
+  <div class="control-section">
+    <div class="control-label">Chart Type <span class="count">5</span></div>
+    <div class="chart-type-grid" id="chart-type-grid">
+      <button class="chart-type-btn active" data-type="bar">
+        <svg class="chart-thumb" viewBox="0 0 52 44" fill="none">
+          <rect x="4" y="28" width="8" height="12" fill="#CCFFE0" stroke="#002910" stroke-width="0.8"/>
+          <rect x="15" y="18" width="8" height="22" fill="#CCFFE0" stroke="#002910" stroke-width="0.8"/>
+          <rect x="26" y="10" width="8" height="30" fill="#EEFF8C" stroke="#8a9600" stroke-width="0.8"/>
+          <rect x="37" y="22" width="8" height="18" fill="#CCFFE0" stroke="#002910" stroke-width="0.8"/>
+          <line x1="4" y1="40" x2="48" y2="40" stroke="#d4e8da" stroke-width="1"/>
+        </svg>
+        <span class="chart-type-label">Bar</span>
+      </button>
+      <button class="chart-type-btn" data-type="line">
+        <svg class="chart-thumb" viewBox="0 0 52 44" fill="none">
+          <polyline points="4,36 14,24 24,28 34,12 44,16" stroke="#008c44" stroke-width="2" fill="none" stroke-linejoin="round"/>
+          <circle cx="4" cy="36" r="2.5" fill="#008c44"/>
+          <circle cx="14" cy="24" r="2.5" fill="#008c44"/>
+          <circle cx="24" cy="28" r="2.5" fill="#008c44"/>
+          <circle cx="34" cy="12" r="2.5" fill="#EEFF8C" stroke="#8a9600" stroke-width="1"/>
+          <circle cx="44" cy="16" r="2.5" fill="#008c44"/>
+          <line x1="4" y1="40" x2="48" y2="40" stroke="#d4e8da" stroke-width="1"/>
+        </svg>
+        <span class="chart-type-label">Line</span>
+      </button>
+      <button class="chart-type-btn" data-type="stat">
+        <svg class="chart-thumb" viewBox="0 0 52 44" fill="none">
+          <text x="26" y="30" text-anchor="middle" font-family="Georgia,serif" font-size="22" font-weight="400" fill="#000d05">3x</text>
+          <rect x="14" y="34" width="24" height="6" fill="#EEFF8C"/>
+          <text x="26" y="39" text-anchor="middle" font-family="monospace" font-size="5" fill="#000d05" font-weight="700">GROWTH</text>
+        </svg>
+        <span class="chart-type-label">Stat</span>
+      </button>
+      <button class="chart-type-btn" data-type="ranked">
+        <svg class="chart-thumb" viewBox="0 0 52 44" fill="none">
+          <rect x="12" y="6" width="32" height="7" fill="#EEFF8C" stroke="#8a9600" stroke-width="0.8"/>
+          <rect x="12" y="17" width="22" height="7" fill="#CCFFE0" stroke="#002910" stroke-width="0.8"/>
+          <rect x="12" y="28" width="14" height="7" fill="#CCFFE0" stroke="#002910" stroke-width="0.8"/>
+          <text x="9" y="12" text-anchor="end" font-family="monospace" font-size="6" fill="#676c79">1</text>
+          <text x="9" y="23" text-anchor="end" font-family="monospace" font-size="6" fill="#676c79">2</text>
+          <text x="9" y="34" text-anchor="end" font-family="monospace" font-size="6" fill="#676c79">3</text>
+        </svg>
+        <span class="chart-type-label">Ranked</span>
+      </button>
+      <button class="chart-type-btn" data-type="table">
+        <svg class="chart-thumb" viewBox="0 0 52 44" fill="none">
+          <rect x="4" y="4" width="44" height="9" fill="#000d05"/>
+          <rect x="4" y="14" width="44" height="7" fill="#f8fffb"/>
+          <rect x="4" y="22" width="44" height="7" fill="#fff"/>
+          <rect x="4" y="30" width="44" height="7" fill="#f8fffb"/>
+          <line x1="4" y1="4" x2="4" y2="37" stroke="#d4e8da" stroke-width="0.8"/>
+          <line x1="48" y1="4" x2="48" y2="37" stroke="#d4e8da" stroke-width="0.8"/>
+          <line x1="4" y1="37" x2="48" y2="37" stroke="#d4e8da" stroke-width="0.8"/>
+        </svg>
+        <span class="chart-type-label">Table</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="control-section">
+    <div class="control-label">Content</div>
+    <div class="field-group">
+      <label class="field-label">Title</label>
+      <input type="text" id="chart-title" placeholder="AI Citations by Quarter">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Subtitle / Source</label>
+      <input type="text" id="chart-subtitle" placeholder="Source: AirOps Research, 2026">
+    </div>
+  </div>
+
+  <!-- Data -->
+  <div class="control-section">
+    <div class="control-label">Data</div>
+    <div class="field-group">
+      <label class="field-label" id="data-hint">One per line — Label: Value</label>
+      <textarea id="data-input" rows="6" placeholder="Q1: 45&#10;Q2: 67&#10;Q3: 89&#10;Q4: 120"></textarea>
+    </div>
+    <div class="field-group" id="highlight-group">
+      <label class="field-label">Highlight</label>
+      <select id="highlight-select">
+        <option value="max">Highest value (auto)</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Options -->
+  <div class="control-section">
+    <div class="control-label">Options</div>
+    <div class="toggle-row">
+      <span>Show Logo</span>
+      <label class="toggle"><input type="checkbox" id="show-logo" checked><span class="toggle-slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <span>Show Source</span>
+      <label class="toggle"><input type="checkbox" id="show-source" checked><span class="toggle-slider"></span></label>
+    </div>
+  </div>
+
+  <!-- Color mode -->
+  <div class="control-section">
+    <div class="control-label">Color Mode</div>
+    <div class="mode-grid">
+      <button class="mode-btn active" data-mode="light">Light</button>
+      <button class="mode-btn" data-mode="dark">Dark</button>
+    </div>
+  </div>
+
+  <!-- Export size -->
+  <div class="control-section">
+    <div class="control-label">Export Size</div>
+    <div class="size-grid">
+      <button class="size-btn active" data-w="1080" data-h="1080">
+        <span class="size-dims">1080×1080</span>
+        <span class="size-label">Square</span>
+      </button>
+      <button class="size-btn" data-w="1080" data-h="1350">
+        <span class="size-dims">1080×1350</span>
+        <span class="size-label">Portrait 4:5</span>
+      </button>
+      <button class="size-btn" data-w="1920" data-h="1080">
+        <span class="size-dims">1920×1080</span>
+        <span class="size-label">Landscape 16:9</span>
+      </button>
+      <button class="size-btn" data-w="1200" data-h="628">
+        <span class="size-dims">1200×628</span>
+        <span class="size-label">OG / LinkedIn</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    <button class="download-btn" id="download-btn">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 6l3 3 3-3M2 11h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Download PNG
+    </button>
+  </div>
+</aside>
+
+<!-- ── Preview ────────────────────────────────────────── -->
+<main class="preview-area">
+  <div class="preview-topbar">
+    <span>Preview</span>
+    <span class="sep">·</span>
+    <span id="preview-dims">1080 × 1080</span>
+    <span class="sep">·</span>
+    <span id="preview-info">Bar Chart · Light</span>
+    <span class="fonts-badge">Fonts Ready</span>
+  </div>
+  <div class="preview-stage" id="preview-stage">
+    <div class="chart-preview-wrap">
+      <div id="chart-canvas"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────────────
+const state = {
+  chartType: 'bar',
+  title: '',
+  subtitle: '',
+  data: '',
+  highlightIndex: -1, // -1 = auto (max)
+  showLogo: true,
+  showSource: true,
+  colorMode: 'light',
+  exportW: 1080,
+  exportH: 1080,
+};
+
+// ── Colors ────────────────────────────────────────────────────────────────────
+const COLORS = {
+  light: {
+    bg: '#ffffff',
+    border: '#d4e8da',
+    title: '#000d05',
+    subtitle: '#676c79',
+    barFill: '#CCFFE0',
+    barStroke: '#002910',
+    barAccent: '#EEFF8C',
+    barAccentStroke: '#8a9600',
+    lineStroke: '#008c44',
+    axisTick: '#a5aab6',
+    axisLine: '#ecedef',
+    gridLine: '#f0f0f0',
+    tableBg: '#ffffff',
+    tableRowAlt: '#f8fffb',
+    tableHeader: '#000d05',
+    tableHeaderText: '#ffffff',
+    tableText: '#000d05',
+    tableSubText: '#676c79',
+    pillBg: '#EEFF8C',
+    pillText: '#000d05',
+    logoFill: '#001408',
+    valueText: '#000d05',
+  },
+  dark: {
+    bg: '#002910',
+    border: '#005c2e',
+    title: '#ffffff',
+    subtitle: 'rgba(255,255,255,0.55)',
+    barFill: '#005c2e',
+    barStroke: '#008c44',
+    barAccent: '#EEFF8C',
+    barAccentStroke: '#c8d866',
+    lineStroke: '#00e676',
+    axisTick: 'rgba(255,255,255,0.35)',
+    axisLine: 'rgba(255,255,255,0.1)',
+    gridLine: 'rgba(255,255,255,0.06)',
+    tableBg: '#002910',
+    tableRowAlt: 'rgba(255,255,255,0.04)',
+    tableHeader: '#000d05',
+    tableHeaderText: '#00ff64',
+    tableText: '#ffffff',
+    tableSubText: 'rgba(255,255,255,0.55)',
+    pillBg: '#EEFF8C',
+    pillText: '#000d05',
+    logoFill: '#ffffff',
+    valueText: '#ffffff',
+  },
+};
+
+// ── Data parsing ──────────────────────────────────────────────────────────────
+function parseData(raw, type) {
+  if (type === 'table') {
+    const lines = raw.trim().split('\n').map(l => l.trim()).filter(Boolean);
+    if (!lines.length) return { headers: ['Metric', 'Value', 'Change'], rows: [['AI Citations', '245', '+34%'], ['Page Views', '12.4K', '+18%'], ['Conversions', '3.2%', '+5%']] };
+    const headers = lines[0].split(',').map(h => h.trim());
+    const rows = lines.slice(1).map(l => l.split(',').map(c => c.trim()));
+    return { headers, rows };
+  }
+  if (type === 'stat') {
+    const lines = raw.trim().split('\n').map(l => l.trim()).filter(Boolean);
+    const getValue = (prefix) => {
+      const line = lines.find(l => l.toLowerCase().startsWith(prefix.toLowerCase() + ':'));
+      return line ? line.slice(line.indexOf(':') + 1).trim() : '';
+    };
+    const plain = lines[0] || '3.4x';
+    return {
+      value: getValue('value') || plain,
+      label: getValue('label') || lines[1] || 'Increase in citations',
+      sub: getValue('sub') || getValue('comparison') || lines[2] || '',
+    };
+  }
+  // key: value pairs for bar/line/ranked
+  const lines = raw.trim().split('\n').map(l => l.trim()).filter(Boolean);
+  if (!lines.length) {
+    return {
+      labels: ['Q1', 'Q2', 'Q3', 'Q4'],
+      values: [45, 67, 89, 120],
+    };
+  }
+  const labels = [], values = [];
+  for (const line of lines) {
+    const sep = line.lastIndexOf(':');
+    if (sep < 0) continue;
+    const label = line.slice(0, sep).trim();
+    const raw_val = line.slice(sep + 1).trim().replace(/[%,]/g, '');
+    const val = parseFloat(raw_val);
+    if (!isNaN(val)) { labels.push(label); values.push(val); }
+  }
+  return labels.length ? { labels, values } : { labels: ['Q1', 'Q2', 'Q3', 'Q4'], values: [45, 67, 89, 120] };
+}
+
+// ── Logo SVG ──────────────────────────────────────────────────────────────────
+function logoSVG(fill, width = 80) {
+  return `<g transform="translate(0,0) scale(${width / 784})">
+    <path d="M111.828 65.6415V88.4663C101.564 72.0112 85.627 61.9258 65.9084 61.9258C23.7703 61.9258 0 92.9782 0 134.647C0 176.581 24.0404 208.695 66.4487 208.695C86.1672 208.695 101.834 198.609 111.828 182.154V204.979H144.782V65.6415H111.828ZM72.9315 181.093C48.8911 181.093 35.1152 159.064 35.1152 134.647C35.1152 110.76 48.621 89.7933 73.4717 89.7933C94.0006 89.7933 111.558 104.391 111.558 134.116C111.558 163.31 94.8109 181.093 72.9315 181.093Z" fill="${fill}"/>
+    <path d="M173.137 65.6494V204.987H208.252V65.6494H173.137Z" fill="${fill}"/>
+    <path d="M272.998 100.141V65.6386H237.883V204.976H272.998V125.355C272.998 104.919 287.314 96.691 300.82 96.691C308.653 96.691 316.757 98.8143 321.079 100.407V63.25C298.119 63.25 279.211 76.7856 272.998 100.141Z" fill="${fill}"/>
+    <path d="M329.629 108.115C329.629 151.377 359.882 182.163 403.371 182.163C447.13 182.163 477.115 151.377 477.115 108.115C477.115 65.6507 447.13 35.3945 403.371 35.3945C359.882 35.3945 329.629 65.6507 329.629 108.115ZM441.997 108.115C441.997 135.187 427.141 154.561 403.371 154.561C379.33 154.561 364.744 135.187 364.744 108.115C364.744 82.1058 379.33 63.2621 403.371 63.2621C427.141 63.2621 441.997 82.1058 441.997 108.115Z" fill="${fill}"/>
+    <path d="M575.086 61.9258C554.557 61.9258 537.81 73.869 528.896 92.9782V65.6415H493.781V251.425H528.896V180.031C538.891 197.282 557.529 208.695 577.247 208.695C615.604 208.695 642.345 179.235 642.345 137.035C642.345 92.7128 614.523 61.9258 575.086 61.9258ZM568.874 182.685C545.374 182.685 528.896 163.31 528.896 135.708C528.896 107.31 545.374 87.4047 568.874 87.4047C591.293 87.4047 607.23 107.841 607.23 136.77C607.23 163.841 591.293 182.685 568.874 182.685Z" fill="${fill}"/>
+    <path d="M653.555 156.675C653.555 181.889 676.244 208.695 721.624 208.695C767.274 208.695 783.751 182.42 783.751 161.983C783.751 130.666 746.205 125.092 721.084 120.315C704.066 117.395 693.262 115.007 693.262 105.452C693.262 94.5706 705.417 87.6701 718.383 87.6701C735.94 87.6701 742.693 99.6133 743.233 112.353H778.349C778.349 91.6511 763.492 61.9258 717.572 61.9258C677.865 61.9258 658.147 83.9544 658.147 107.575C658.147 141.282 696.233 144.732 721.354 149.509C735.94 152.163 748.636 155.348 748.636 165.699C748.636 176.05 736.21 182.95 722.975 182.95C710.549 182.95 688.67 176.05 688.67 156.675H653.555Z" fill="${fill}"/>
+    <path d="M191.339 48.6576C176.921 48.6576 166.578 38.4949 166.578 24.6368C166.578 10.7786 176.921 0 191.339 0C205.13 0 216.1 10.7786 216.1 24.6368C216.1 38.4949 205.13 48.6576 191.339 48.6576Z" fill="${fill}"/>
+  </g>`;
+}
+
+// ── Chart renderers ───────────────────────────────────────────────────────────
+
+function renderBar(data, C, W, H, cfg) {
+  const { labels, values } = data;
+  const n = labels.length;
+  const pl = 56, pr = 32, pt = 100, pb = 64;
+  const chartW = W - pl - pr;
+  const chartH = H - pt - pb;
+  const maxVal = Math.max(...values);
+  const hiIdx = cfg.highlightIndex >= 0 && cfg.highlightIndex < n ? cfg.highlightIndex : values.indexOf(maxVal);
+
+  const barW = Math.min(chartW / n * 0.55, 80);
+  const gap = chartW / n;
+
+  // Grid lines
+  const ticks = 4;
+  let gridLines = '';
+  for (let i = 0; i <= ticks; i++) {
+    const y = pt + chartH - (i / ticks) * chartH;
+    const val = Math.round((i / ticks) * maxVal);
+    gridLines += `<line x1="${pl}" y1="${y}" x2="${W - pr}" y2="${y}" stroke="${C.gridLine}" stroke-width="1"/>
+    <text x="${pl - 8}" y="${y + 4}" text-anchor="end" font-family="'Saans Mono','DM Mono',monospace" font-size="10" fill="${C.axisTick}">${val}</text>`;
+  }
+
+  // Bars
+  let bars = '';
+  for (let i = 0; i < n; i++) {
+    const x = pl + i * gap + gap / 2 - barW / 2;
+    const bh = (values[i] / maxVal) * chartH;
+    const y = pt + chartH - bh;
+    const isHi = i === hiIdx;
+    const fill = isHi ? C.barAccent : C.barFill;
+    const stroke = isHi ? C.barAccentStroke : C.barStroke;
+    bars += `<rect x="${x}" y="${y}" width="${barW}" height="${bh}" fill="${fill}" stroke="${stroke}" stroke-width="0.8"/>
+    <text x="${x + barW / 2}" y="${y - 6}" text-anchor="middle" font-family="'Saans Mono','DM Mono',monospace" font-size="11" font-weight="500" fill="${C.valueText}">${values[i]}</text>
+    <text x="${x + barW / 2}" y="${pt + chartH + 18}" text-anchor="middle" font-family="'Saans Mono','DM Mono',monospace" font-size="11" fill="${C.axisTick}">${labels[i].toUpperCase()}</text>`;
+  }
+
+  return `${gridLines}<line x1="${pl}" y1="${pt}" x2="${pl}" y2="${pt + chartH}" stroke="${C.axisLine}" stroke-width="1"/>
+  <line x1="${pl}" y1="${pt + chartH}" x2="${W - pr}" y2="${pt + chartH}" stroke="${C.axisLine}" stroke-width="1"/>
+  ${bars}`;
+}
+
+function renderLine(data, C, W, H, cfg) {
+  const { labels, values } = data;
+  const n = labels.length;
+  const pl = 56, pr = 32, pt = 100, pb = 64;
+  const chartW = W - pl - pr;
+  const chartH = H - pt - pb;
+  const maxVal = Math.max(...values) * 1.05;
+  const hiIdx = cfg.highlightIndex >= 0 && cfg.highlightIndex < n ? cfg.highlightIndex : values.indexOf(Math.max(...values));
+
+  const pts = values.map((v, i) => [pl + (i / (n - 1 || 1)) * chartW, pt + chartH - (v / maxVal) * chartH]);
+
+  // Grid
+  let grid = '';
+  for (let i = 0; i <= 4; i++) {
+    const y = pt + chartH - (i / 4) * chartH;
+    const val = Math.round((i / 4) * maxVal);
+    grid += `<line x1="${pl}" y1="${y}" x2="${W - pr}" y2="${y}" stroke="${C.gridLine}" stroke-width="1"/>
+    <text x="${pl - 8}" y="${y + 4}" text-anchor="end" font-family="'Saans Mono','DM Mono',monospace" font-size="10" fill="${C.axisTick}">${val}</text>`;
+  }
+
+  const polyline = pts.map(([x, y]) => `${x},${y}`).join(' ');
+
+  // Fill area under line
+  const fillPts = [`${pl},${pt + chartH}`, ...pts.map(([x, y]) => `${x},${y}`), `${W - pr},${pt + chartH}`].join(' ');
+  const fillColor = cfg.colorMode === 'dark' ? 'rgba(0,230,118,0.08)' : 'rgba(204,255,224,0.5)';
+
+  let dots = '';
+  pts.forEach(([x, y], i) => {
+    const isHi = i === hiIdx;
+    dots += `<circle cx="${x}" cy="${y}" r="${isHi ? 6 : 4}" fill="${isHi ? C.barAccent : C.lineStroke}" stroke="${C.bg}" stroke-width="2"/>`;
+    if (isHi) dots += `<text x="${x}" y="${y - 14}" text-anchor="middle" font-family="'Saans Mono','DM Mono',monospace" font-size="11" font-weight="500" fill="${C.valueText}">${values[i]}</text>`;
+  });
+
+  // X labels
+  let xLabels = '';
+  pts.forEach(([x], i) => {
+    xLabels += `<text x="${x}" y="${pt + chartH + 18}" text-anchor="middle" font-family="'Saans Mono','DM Mono',monospace" font-size="11" fill="${C.axisTick}">${labels[i].toUpperCase()}</text>`;
+  });
+
+  return `${grid}
+  <polygon points="${fillPts}" fill="${fillColor}"/>
+  <polyline points="${polyline}" stroke="${C.lineStroke}" stroke-width="2.5" fill="none" stroke-linejoin="round" stroke-linecap="round"/>
+  <line x1="${pl}" y1="${pt}" x2="${pl}" y2="${pt + chartH}" stroke="${C.axisLine}" stroke-width="1"/>
+  <line x1="${pl}" y1="${pt + chartH}" x2="${W - pr}" y2="${pt + chartH}" stroke="${C.axisLine}" stroke-width="1"/>
+  ${dots}${xLabels}`;
+}
+
+function renderRanked(data, C, W, H, cfg) {
+  const { labels, values } = data;
+  const n = Math.min(labels.length, 8);
+  const pl = 56, pr = 48, pt = 90, pb = 40;
+  const chartH = H - pt - pb;
+  const rowH = chartH / n;
+  const maxVal = Math.max(...values);
+  const maxBarW = W - pl - pr - 70;
+  const hiIdx = cfg.highlightIndex >= 0 ? cfg.highlightIndex : 0; // default: first (highest)
+
+  let rows = '';
+  for (let i = 0; i < n; i++) {
+    const y = pt + i * rowH;
+    const bw = (values[i] / maxVal) * maxBarW;
+    const isHi = i === hiIdx;
+    const fill = isHi ? C.barAccent : C.barFill;
+    const stroke = isHi ? C.barAccentStroke : C.barStroke;
+    const barY = y + rowH * 0.2;
+    const barH = rowH * 0.5;
+
+    rows += `
+    <text x="${pl - 8}" y="${barY + barH * 0.7}" text-anchor="end" font-family="'Saans Mono','DM Mono',monospace" font-size="11" font-weight="500" fill="${C.axisTick}">${i + 1}</text>
+    <rect x="${pl}" y="${barY}" width="${bw}" height="${barH}" fill="${fill}" stroke="${stroke}" stroke-width="0.8"/>
+    <text x="${pl + bw + 8}" y="${barY + barH * 0.72}" font-family="'Saans Mono','DM Mono',monospace" font-size="11" font-weight="500" fill="${C.valueText}">${values[i]}</text>
+    <text x="${pl}" y="${barY + barH + 13}" font-family="'Saans Mono','DM Mono',monospace" font-size="10" fill="${C.axisTick}">${labels[i].toUpperCase()}</text>`;
+  }
+  return rows;
+}
+
+function renderStat(data, C, W, H, cfg) {
+  const { value, label, sub } = data;
+  const cx = W / 2;
+  const cy = H / 2 - 20;
+
+  let out = `<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="middle"
+    font-family="'Serrif VF',Georgia,serif" font-size="${Math.min(W * 0.18, 140)}px"
+    font-weight="400" letter-spacing="-0.02em" fill="${C.title}">${value}</text>`;
+
+  const pillH = 28, pillPad = 16;
+  const labelY = cy + Math.min(W * 0.10, 80);
+  out += `<rect x="${cx - label.length * 4.5 - pillPad}" y="${labelY}" width="${label.length * 9 + pillPad * 2}" height="${pillH}" fill="${C.pillBg}"/>
+  <text x="${cx}" y="${labelY + pillH * 0.65}" text-anchor="middle"
+    font-family="'Saans Mono','DM Mono',monospace" font-size="12" font-weight="500"
+    letter-spacing="0.08em" text-transform="uppercase" fill="${C.pillText}">${label.toUpperCase()}</text>`;
+
+  if (sub) {
+    out += `<text x="${cx}" y="${labelY + pillH + 24}" text-anchor="middle"
+      font-family="'Saans Mono','DM Mono',monospace" font-size="12" fill="${C.subtitle}">${sub}</text>`;
+  }
+  return out;
+}
+
+function renderTable(data, C, W, H, cfg) {
+  const { headers, rows } = data;
+  const n = Math.min(rows.length, 8);
+  const pl = 40, pr = 40, pt = 90;
+  const tableW = W - pl - pr;
+  const rowH = 36;
+  const headerH = 36;
+  const colW = tableW / headers.length;
+
+  let out = `<rect x="${pl}" y="${pt}" width="${tableW}" height="${headerH}" fill="${C.tableHeader}"/>`;
+  headers.forEach((h, i) => {
+    out += `<text x="${pl + i * colW + 12}" y="${pt + headerH * 0.65}"
+      font-family="'Saans Mono','DM Mono',monospace" font-size="11" font-weight="500"
+      letter-spacing="0.08em" fill="${C.tableHeaderText}">${h.toUpperCase()}</text>`;
+  });
+
+  for (let r = 0; r < n; r++) {
+    const rowY = pt + headerH + r * rowH;
+    const rowBg = r % 2 === 0 ? C.tableBg : C.tableRowAlt;
+    out += `<rect x="${pl}" y="${rowY}" width="${tableW}" height="${rowH}" fill="${rowBg}" stroke="${C.border}" stroke-width="0.5"/>`;
+    rows[r].forEach((cell, i) => {
+      const isFirst = i === 0;
+      out += `<text x="${pl + i * colW + 12}" y="${rowY + rowH * 0.65}"
+        font-family="'Saans Mono','DM Mono',monospace" font-size="12"
+        font-weight="${isFirst ? '500' : '400'}"
+        fill="${isFirst ? C.tableText : C.tableSubText}">${cell}</text>`;
+    });
+  }
+  out += `<rect x="${pl}" y="${pt}" width="${tableW}" height="${headerH + n * rowH}" fill="none" stroke="${C.border}" stroke-width="1"/>`;
+  return out;
+}
+
+// ── Main render ───────────────────────────────────────────────────────────────
+function render() {
+  const W = 800, H = 800 * state.exportH / state.exportW;
+  const C = COLORS[state.colorMode];
+  const title = document.getElementById('chart-title').value || defaultTitles[state.chartType];
+  const subtitle = document.getElementById('chart-subtitle').value || 'Source: AirOps Research, 2026';
+  const rawData = document.getElementById('data-input').value;
+  const data = parseData(rawData, state.chartType);
+  const showLogo = document.getElementById('show-logo').checked;
+  const showSource = document.getElementById('show-source').checked;
+  const hiVal = document.getElementById('highlight-select').value;
+  const hiIdx = hiVal === 'max' ? -1 : parseInt(hiVal);
+
+  const cfg = { colorMode: state.colorMode, highlightIndex: hiIdx };
+
+  // Title block
+  const titleFontSize = Math.min(W * 0.052, 44);
+  const subtitleFontSize = 13;
+  const titleBlock = `
+    <text x="40" y="52" font-family="'Serrif VF',Georgia,serif" font-size="${titleFontSize}"
+      font-weight="400" letter-spacing="-0.02em" fill="${C.title}">${escSVG(title)}</text>`;
+
+  // Chart body
+  let chartBody = '';
+  if (state.chartType === 'bar')    chartBody = renderBar(data, C, W, H, cfg);
+  if (state.chartType === 'line')   chartBody = renderLine(data, C, W, H, cfg);
+  if (state.chartType === 'ranked') chartBody = renderRanked(data, C, W, H, cfg);
+  if (state.chartType === 'stat')   chartBody = renderStat(data, C, W, H, cfg);
+  if (state.chartType === 'table')  chartBody = renderTable(data, C, W, H, cfg);
+
+  // Source / subtitle
+  const sourceBlock = showSource
+    ? `<text x="40" y="${H - 28}" font-family="'Saans Mono','DM Mono',monospace" font-size="11"
+        font-weight="500" letter-spacing="0.06em" fill="${C.subtitle}">${escSVG(subtitle.toUpperCase())}</text>`
+    : '';
+
+  // Logo
+  const logoW = W * 0.09;
+  const logoH = logoW * 252 / 784;
+  const logoBlock = showLogo
+    ? `<g transform="translate(${W - 40 - logoW}, ${H - 32 - logoH})">${logoSVG(C.logoFill, logoW)}</g>`
+    : '';
+
+  // Border line at top
+  const topAccent = `<line x1="40" y1="16" x2="${W - 40}" y2="16" stroke="${C.border}" stroke-width="1"/>`;
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">
+  <rect width="${W}" height="${H}" fill="${C.bg}"/>
+  ${topAccent}
+  ${titleBlock}
+  ${chartBody}
+  ${sourceBlock}
+  ${logoBlock}
+</svg>`;
+
+  const canvas = document.getElementById('chart-canvas');
+  canvas.innerHTML = svg;
+
+  // Scale preview to fit stage
+  const stage = document.getElementById('preview-stage');
+  const stageW = stage.clientWidth - 64;
+  const stageH = stage.clientHeight - 64;
+  const scale = Math.min(stageW / W, stageH / H, 1);
+  canvas.style.width = W * scale + 'px';
+  canvas.style.height = H * scale + 'px';
+  canvas.querySelector('svg').setAttribute('width', W * scale);
+  canvas.querySelector('svg').setAttribute('height', H * scale);
+
+  // Update topbar
+  document.getElementById('preview-dims').textContent = `${state.exportW} × ${state.exportH}`;
+  document.getElementById('preview-info').textContent = `${CHART_NAMES[state.chartType]} · ${state.colorMode === 'light' ? 'Light' : 'Dark'}`;
+}
+
+// ── Export ────────────────────────────────────────────────────────────────────
+function downloadPNG() {
+  const W = state.exportW, H = state.exportH;
+  const C = COLORS[state.colorMode];
+  const title = document.getElementById('chart-title').value || defaultTitles[state.chartType];
+  const subtitle = document.getElementById('chart-subtitle').value || 'Source: AirOps Research, 2026';
+  const rawData = document.getElementById('data-input').value;
+  const data = parseData(rawData, state.chartType);
+  const showLogo = document.getElementById('show-logo').checked;
+  const showSource = document.getElementById('show-source').checked;
+  const hiVal = document.getElementById('highlight-select').value;
+  const hiIdx = hiVal === 'max' ? -1 : parseInt(hiVal);
+  const cfg = { colorMode: state.colorMode, highlightIndex: hiIdx };
+
+  // Render at full export resolution (scale = exportW / 800)
+  const scale = W / 800;
+  const VW = 800, VH = 800 * H / W;
+
+  const titleFontSize = Math.min(VW * 0.052, 44);
+  const titleBlock = `<text x="40" y="52" font-family="'Serrif VF',Georgia,serif" font-size="${titleFontSize}" font-weight="400" letter-spacing="-0.02em" fill="${C.title}">${escSVG(title)}</text>`;
+
+  let chartBody = '';
+  if (state.chartType === 'bar')    chartBody = renderBar(data, C, VW, VH, cfg);
+  if (state.chartType === 'line')   chartBody = renderLine(data, C, VW, VH, cfg);
+  if (state.chartType === 'ranked') chartBody = renderRanked(data, C, VW, VH, cfg);
+  if (state.chartType === 'stat')   chartBody = renderStat(data, C, VW, VH, cfg);
+  if (state.chartType === 'table')  chartBody = renderTable(data, C, VW, VH, cfg);
+
+  const sourceBlock = showSource ? `<text x="40" y="${VH - 28}" font-family="'Saans Mono','DM Mono',monospace" font-size="11" font-weight="500" letter-spacing="0.06em" fill="${C.subtitle}">${escSVG(subtitle.toUpperCase())}</text>` : '';
+  const logoW = VW * 0.09;
+  const logoH = logoW * 252 / 784;
+  const logoBlock = showLogo ? `<g transform="translate(${VW - 40 - logoW}, ${VH - 32 - logoH})">${logoSVG(C.logoFill, logoW)}</g>` : '';
+  const topAccent = `<line x1="40" y1="16" x2="${VW - 40}" y2="16" stroke="${C.border}" stroke-width="1"/>`;
+
+  const svgStr = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${VW} ${VH}" width="${W}" height="${H}">
+  <rect width="${VW}" height="${VH}" fill="${C.bg}"/>
+  ${topAccent}${titleBlock}${chartBody}${sourceBlock}${logoBlock}
+</svg>`;
+
+  const blob = new Blob([svgStr], { type: 'image/svg+xml' });
+  const url = URL.createObjectURL(blob);
+  const img = new Image();
+  img.onload = () => {
+    const cv = document.createElement('canvas');
+    cv.width = W; cv.height = H;
+    const ctx = cv.getContext('2d');
+    ctx.drawImage(img, 0, 0, W, H);
+    URL.revokeObjectURL(url);
+    const a = document.createElement('a');
+    a.download = `airops-dataviz-${state.chartType}-${W}x${H}.png`;
+    a.href = cv.toDataURL('image/png');
+    a.click();
+    document.getElementById('download-btn').classList.remove('loading');
+    document.getElementById('download-btn').textContent = 'Download PNG';
+  };
+  img.src = url;
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function escSVG(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+const CHART_NAMES = { bar: 'Bar Chart', line: 'Line Chart', stat: 'Stat', ranked: 'Ranked', table: 'Table' };
+const defaultTitles = {
+  bar: 'AI Citations by Quarter',
+  line: 'Visibility Growth Over Time',
+  stat: 'Performance',
+  ranked: 'Top Content Sources',
+  table: 'Content Performance',
+};
+const defaultData = {
+  bar: 'Q1: 45\nQ2: 67\nQ3: 89\nQ4: 120',
+  line: 'Jan: 22\nFeb: 38\nMar: 45\nApr: 61\nMay: 89\nJun: 118',
+  stat: 'Value: 3.4x\nLabel: More AI Citations\nSub: vs. industry average',
+  ranked: 'ChatGPT: 86\nPerplexity: 8\nGoogle AI: 4\nCopilot: 2',
+  table: 'Metric, Value, Change\nAI Citations, 245, +34%\nPage Views, 12.4K, +18%\nConversions, 3.2%, +5%\nRank, #3, +7',
+};
+const dataHints = {
+  bar: 'One per line — Label: Value',
+  line: 'One per line — Label: Value',
+  stat: 'Value: 3.4x\nLabel: Your label\nSub: Optional subtext',
+  ranked: 'Sorted by value — Label: Value',
+  table: 'Row 1: headers (comma-sep)\nRemaining rows: data',
+};
+
+// Update highlight options when data changes
+function updateHighlightOptions() {
+  const sel = document.getElementById('highlight-select');
+  const rawData = document.getElementById('data-input').value;
+  const data = parseData(rawData, state.chartType);
+  const opts = ['<option value="max">Highest value (auto)</option>'];
+  if (data.labels) {
+    data.labels.forEach((l, i) => opts.push(`<option value="${i}">${l}</option>`));
+  }
+  sel.innerHTML = opts.join('');
+}
+
+// ── Wire up controls ──────────────────────────────────────────────────────────
+document.getElementById('chart-type-grid').addEventListener('click', e => {
+  const btn = e.target.closest('.chart-type-btn');
+  if (!btn) return;
+  document.querySelectorAll('.chart-type-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  state.chartType = btn.dataset.type;
+  // Load default data for this type
+  const di = document.getElementById('data-input');
+  if (!di.dataset.userEdited) di.value = defaultData[state.chartType];
+  document.getElementById('data-hint').textContent = dataHints[state.chartType];
+  document.getElementById('highlight-group').style.display =
+    ['bar', 'line', 'ranked'].includes(state.chartType) ? '' : 'none';
+  updateHighlightOptions();
+  render();
+});
+
+['chart-title', 'chart-subtitle'].forEach(id => {
+  document.getElementById(id).addEventListener('input', render);
+});
+
+document.getElementById('data-input').addEventListener('input', () => {
+  document.getElementById('data-input').dataset.userEdited = '1';
+  updateHighlightOptions();
+  render();
+});
+
+document.getElementById('highlight-select').addEventListener('change', render);
+document.getElementById('show-logo').addEventListener('change', render);
+document.getElementById('show-source').addEventListener('change', render);
+
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.colorMode = btn.dataset.mode;
+    render();
+  });
+});
+
+document.querySelectorAll('.size-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.exportW = parseInt(btn.dataset.w);
+    state.exportH = parseInt(btn.dataset.h);
+    render();
+  });
+});
+
+document.getElementById('download-btn').addEventListener('click', () => {
+  const btn = document.getElementById('download-btn');
+  btn.classList.add('loading');
+  btn.textContent = 'Exporting...';
+  setTimeout(downloadPNG, 50);
+});
+
+window.addEventListener('resize', render);
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+document.getElementById('data-input').value = defaultData.bar;
+document.getElementById('chart-title').value = '';
+document.getElementById('chart-subtitle').value = '';
+updateHighlightOptions();
+render();
+</script>
+</body>
+</html>
