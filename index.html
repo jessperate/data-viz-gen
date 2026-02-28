@@ -161,6 +161,23 @@
       overflow: hidden;
     }
     #chart-canvas svg { display: block; }
+
+    /* ── Painting grid ── */
+    .painting-grid { display: flex; gap: 4px; flex-wrap: wrap; }
+    .painting-btn {
+      width: 48px; height: 38px; cursor: pointer; border: 2px solid #ecedef;
+      padding: 0; background: none; overflow: hidden; flex-shrink: 0; transition: border-color 0.15s;
+    }
+    .painting-btn:hover { border-color: #008c44; }
+    .painting-btn.active { border-color: #EEFF8C; box-shadow: 0 0 0 1px #8a9600; }
+    .painting-btn img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .painting-btn.none-btn {
+      background: #f0f0ee; display: flex; align-items: center; justify-content: center;
+      font-family: 'Saans Mono', monospace; font-size: 9px; font-weight: 500;
+      letter-spacing: 0.06em; text-transform: uppercase; color: #676c79;
+    }
+    .painting-btn.none-btn.active { background: #000d05; color: #fff; border-color: #000d05; }
+    .painting-grid.disabled { opacity: 0.4; pointer-events: none; }
   </style>
 </head>
 <body>
@@ -260,6 +277,53 @@
     </div>
   </div>
 
+  <!-- Layout -->
+  <div class="control-section">
+    <div class="control-label">Layout</div>
+    <div class="mode-grid" id="layout-grid">
+      <button class="mode-btn active" data-layout="standard">Standard</button>
+      <button class="mode-btn" data-layout="split">Split</button>
+    </div>
+  </div>
+
+  <!-- Background -->
+  <div class="control-section">
+    <div class="control-label">Background</div>
+    <div class="painting-grid" id="painting-grid">
+      <button class="painting-btn none-btn active" data-painting="none">None</button>
+      <button class="painting-btn" data-painting="turner-sunrise">
+        <img src="paintings/turner-sunrise.jpg" alt="Golden Dawn" draggable="false">
+      </button>
+      <button class="painting-btn" data-painting="bierstadt-sierra">
+        <img src="paintings/bierstadt-sierra.jpg" alt="Sierra" draggable="false">
+      </button>
+      <button class="painting-btn" data-painting="church-twilight">
+        <img src="paintings/church-twilight.jpg" alt="Twilight" draggable="false">
+      </button>
+      <button class="painting-btn" data-painting="friedrich-ice">
+        <img src="paintings/friedrich-ice.jpg" alt="Frozen Sea" draggable="false">
+      </button>
+      <button class="painting-btn" data-painting="turner-storm">
+        <img src="paintings/turner-storm.jpg" alt="Storm" draggable="false">
+      </button>
+      <button class="painting-btn" data-painting="monet-sunrise">
+        <img src="paintings/monet-sunrise.jpg" alt="Monet" draggable="false">
+      </button>
+      <button class="painting-btn" data-painting="moran-canyon">
+        <img src="paintings/moran-canyon.jpg" alt="Canyon" draggable="false">
+      </button>
+      <button class="painting-btn" data-painting="kensett-lake">
+        <img src="paintings/kensett-lake.jpg" alt="Lake" draggable="false">
+      </button>
+      <button class="painting-btn" data-painting="turner-temeraire">
+        <img src="paintings/turner-temeraire.jpg" alt="Temeraire" draggable="false">
+      </button>
+      <button class="painting-btn" data-painting="heade-storm">
+        <img src="paintings/heade-storm.jpg" alt="Heade" draggable="false">
+      </button>
+    </div>
+  </div>
+
   <!-- Options -->
   <div class="control-section">
     <div class="control-label">Options</div>
@@ -343,6 +407,8 @@ const state = {
   colorMode: 'light',
   exportW: 1080,
   exportH: 1080,
+  paintingKey: null,       // null | string
+  layoutMode: 'standard',  // 'standard' | 'split'
 };
 
 // ── Colors ────────────────────────────────────────────────────────────────────
@@ -370,6 +436,7 @@ const COLORS = {
     pillText: '#000d05',
     logoFill: '#001408',
     valueText: '#000d05',
+    splitPanelBg: '#002910',
   },
   dark: {
     bg: '#002910',
@@ -394,8 +461,53 @@ const COLORS = {
     pillText: '#000d05',
     logoFill: '#ffffff',
     valueText: '#ffffff',
+    splitPanelBg: '#000d05',
   },
 };
+
+// ── Paintings ─────────────────────────────────────────────────────────────────
+const PAINTINGS = [
+  { key: 'turner-sunrise',    label: 'Golden Dawn', file: 'paintings/turner-sunrise.jpg',    overlay: 0.32 },
+  { key: 'bierstadt-sierra',  label: 'Sierra',      file: 'paintings/bierstadt-sierra.jpg',  overlay: 0.28 },
+  { key: 'church-twilight',   label: 'Twilight',    file: 'paintings/church-twilight.jpg',   overlay: 0.25 },
+  { key: 'friedrich-ice',     label: 'Frozen Sea',  file: 'paintings/friedrich-ice.jpg',     overlay: 0.30 },
+  { key: 'turner-storm',      label: 'Storm',       file: 'paintings/turner-storm.jpg',      overlay: 0.38 },
+  { key: 'monet-sunrise',     label: 'Monet',       file: 'paintings/monet-sunrise.jpg',     overlay: 0.30 },
+  { key: 'moran-canyon',      label: 'Canyon',      file: 'paintings/moran-canyon.jpg',      overlay: 0.28 },
+  { key: 'kensett-lake',      label: 'Lake',        file: 'paintings/kensett-lake.jpg',      overlay: 0.22 },
+  { key: 'turner-temeraire',  label: 'Temeraire',   file: 'paintings/turner-temeraire.jpg',  overlay: 0.30 },
+  { key: 'heade-storm',       label: 'Heade',       file: 'paintings/heade-storm.jpg',       overlay: 0.28 },
+];
+const paintingCache = {};
+
+function prefetchPaintings() {
+  return Promise.all(PAINTINGS.map(p => new Promise(resolve => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const cv = document.createElement('canvas');
+      cv.width = img.naturalWidth; cv.height = img.naturalHeight;
+      cv.getContext('2d').drawImage(img, 0, 0);
+      try { paintingCache[p.key] = cv.toDataURL('image/jpeg', 0.85); }
+      catch(e) { paintingCache[p.key] = p.file; }
+      resolve();
+    };
+    img.onerror = () => { paintingCache[p.key] = p.file; resolve(); };
+    img.src = p.file;
+  })));
+}
+
+function getPaintingColors() {
+  return {
+    ...COLORS.dark,
+    bg: 'transparent',
+    border: 'rgba(255,255,255,0.25)',
+    axisTick: 'rgba(255,255,255,0.60)',
+    axisLine: 'rgba(255,255,255,0.20)',
+    gridLine: 'rgba(255,255,255,0.10)',
+    subtitle: 'rgba(255,255,255,0.65)',
+  };
+}
 
 // ── Data parsing ──────────────────────────────────────────────────────────────
 function parseData(raw, type) {
@@ -464,7 +576,7 @@ function renderBar(data, C, W, H, cfg) {
   const { labels, values } = data;
   const n = labels.length;
   const pl = 56, pr = 32, pb = 90;
-  const pt = 100 + (cfg.ptOffset || 0);
+  const pt = (cfg.basePt ?? 100) + (cfg.ptOffset || 0);
   const chartW = W - pl - pr;
   const chartH = H - pt - pb;
   const maxVal = Math.max(...values);
@@ -506,7 +618,7 @@ function renderLine(data, C, W, H, cfg) {
   const { labels, values } = data;
   const n = labels.length;
   const pl = 56, pr = 32, pb = 90;
-  const pt = 100 + (cfg.ptOffset || 0);
+  const pt = (cfg.basePt ?? 100) + (cfg.ptOffset || 0);
   const chartW = W - pl - pr;
   const chartH = H - pt - pb;
   const maxVal = Math.max(...values) * 1.05;
@@ -554,7 +666,7 @@ function renderRanked(data, C, W, H, cfg) {
   const { labels, values } = data;
   const n = Math.min(labels.length, 8);
   const pl = 56, pr = 48, pb = 80;
-  const pt = 90 + (cfg.ptOffset || 0);
+  const pt = (cfg.basePt ?? 90) + (cfg.ptOffset || 0);
   const chartH = H - pt - pb;
   const rowH = chartH / n;
   const maxVal = Math.max(...values);
@@ -609,7 +721,7 @@ function renderTable(data, C, W, H, cfg) {
   const { headers, rows } = data;
   const n = Math.min(rows.length, 8);
   const pl = 40, pr = 40;
-  const pt = 90 + (cfg.ptOffset || 0);
+  const pt = (cfg.basePt ?? 90) + (cfg.ptOffset || 0);
   const tableW = W - pl - pr;
   const headerH = 40;
   const availH = H - pt - 80;
@@ -640,6 +752,25 @@ function renderTable(data, C, W, H, cfg) {
 }
 
 // ── Text wrap helpers ─────────────────────────────────────────────────────────
+function wrapTextMulti(text, maxWidth, fontSize, maxLines = 5, charScale = 0.52) {
+  const maxChars = Math.floor(maxWidth / (fontSize * charScale));
+  const words = text.split(' ');
+  const lines = [];
+  let current = '';
+  for (const word of words) {
+    const candidate = current ? `${current} ${word}` : word;
+    if (candidate.length <= maxChars) {
+      current = candidate;
+    } else {
+      if (current) lines.push(current);
+      current = word;
+      if (lines.length >= maxLines - 1) break;
+    }
+  }
+  if (current) lines.push(current);
+  return lines.slice(0, maxLines);
+}
+
 function wrapText(text, maxWidth, fontSize, charScaleFactor = 0.57) {
   const maxChars = Math.floor(maxWidth / (fontSize * charScaleFactor));
   if (text.length <= maxChars) return [text];
@@ -655,19 +786,20 @@ function wrapText(text, maxWidth, fontSize, charScaleFactor = 0.57) {
   return line2 ? [line1, line2] : [line1];
 }
 
-function buildTitleSVG(title, W, C) {
+function buildTitleSVG(title, W, C, yOffset = 0) {
   const fontSize = Math.min(W * 0.052, 44);
   const maxWidth = W - 80;
   const lines = wrapText(title, maxWidth, fontSize);
   const lineH = fontSize * 1.2;
+  const baseY = 52 + yOffset;
   if (lines.length === 1) {
     return {
-      svg: `<text x="40" y="52" font-family="'Serrif VF',Georgia,serif" font-size="${fontSize}" font-weight="400" letter-spacing="-0.02em" fill="${C.title}">${escSVG(lines[0])}</text>`,
+      svg: `<text x="40" y="${baseY}" font-family="'Serrif VF',Georgia,serif" font-size="${fontSize}" font-weight="400" letter-spacing="-0.02em" fill="${C.title}">${escSVG(lines[0])}</text>`,
       extraPt: 0,
     };
   }
   return {
-    svg: `<text x="40" y="52" font-family="'Serrif VF',Georgia,serif" font-size="${fontSize}" font-weight="400" letter-spacing="-0.02em" fill="${C.title}">
+    svg: `<text x="40" y="${baseY}" font-family="'Serrif VF',Georgia,serif" font-size="${fontSize}" font-weight="400" letter-spacing="-0.02em" fill="${C.title}">
     <tspan x="40" dy="0">${escSVG(lines[0])}</tspan>
     <tspan x="40" dy="${lineH}">${escSVG(lines[1])}</tspan>
   </text>`,
@@ -675,10 +807,88 @@ function buildTitleSVG(title, W, C) {
   };
 }
 
+function buildSplitTitleSVG(title, panelW, H, titleColor) {
+  const fontSize = Math.min(panelW * 0.095, 52);
+  const maxWidth = panelW - 72;
+  const lines = wrapTextMulti(title, maxWidth, fontSize, 5, 0.50);
+  const lineH = fontSize * 1.25;
+  const totalH = lines.length * lineH;
+  const startY = H * 0.40 - totalH / 2 + fontSize;
+  let tspans = lines.map((l, i) =>
+    `<tspan x="40" dy="${i === 0 ? 0 : lineH}">${escSVG(l)}</tspan>`
+  ).join('');
+  return `<text x="40" y="${Math.round(startY)}" font-family="'Serrif VF',Georgia,serif"
+    font-size="${fontSize}" font-weight="400" letter-spacing="-0.02em" fill="${titleColor}">${tspans}</text>`;
+}
+
+function buildPaintingBackground(key, W, H, forExport) {
+  const p = PAINTINGS.find(x => x.key === key);
+  if (!p) return '';
+  const href = forExport ? (paintingCache[key] || p.file) : p.file;
+  const overlayAlpha = p.overlay;
+  return `<image href="${href}" x="0" y="0" width="${W}" height="${H}" preserveAspectRatio="xMidYMid slice"/>
+  <rect width="${W}" height="${H}" fill="rgba(0,0,0,${overlayAlpha})"/>`;
+}
+
+function renderSplitLayout({ W, H, title, subtitle, data, showLogo, showSource, hiIdx, colorMode, chartType }) {
+  const C = COLORS[colorMode];
+  const splitX = Math.round(W * 0.40);
+  const rightW = W - splitX;
+
+  // Left panel title colors
+  const titleColor = colorMode === 'light' ? '#000d05' : '#ffffff';
+  const subtitleColor = colorMode === 'light' ? '#676c79' : 'rgba(255,255,255,0.55)';
+  const logoFillColor = colorMode === 'light' ? '#001408' : '#ffffff';
+
+  // Top accent (full width)
+  const topAccent = `<line x1="40" y1="16" x2="${W - 40}" y2="16" stroke="${C.border}" stroke-width="1"/>`;
+
+  // Left panel background
+  const leftBg = `<rect x="0" y="0" width="${splitX}" height="${H}" fill="${C.bg}"/>`;
+
+  // Right panel background
+  const rightBg = `<rect x="${splitX}" y="0" width="${rightW}" height="${H}" fill="${C.splitPanelBg}"/>`;
+
+  // Divider line
+  const divider = `<line x1="${splitX}" y1="0" x2="${splitX}" y2="${H}" stroke="${C.border}" stroke-width="1"/>`;
+
+  // Split title in left panel
+  const titleSVG = buildSplitTitleSVG(title, splitX, H, titleColor);
+
+  // Logo in left panel bottom
+  const logoW = splitX * 0.22;
+  const logoH = logoW * 252 / 784;
+  const logoBlock = showLogo
+    ? `<g transform="translate(${40}, ${H - 28 - logoH})">${logoSVG(logoFillColor, logoW)}</g>`
+    : '';
+
+  // Source in left panel bottom
+  const sourceBlock = showSource
+    ? `<text x="40" y="${H - 28}" font-family="'Saans Mono','DM Mono',monospace" font-size="11"
+        font-weight="500" letter-spacing="0.06em" fill="${subtitleColor}">${escSVG(subtitle.toUpperCase())}</text>`
+    : '';
+
+  // Right chart colors
+  const chartC = { ...COLORS.dark, bg: C.splitPanelBg, barFill: '#CCFFE0', barStroke: '#00a854' };
+
+  // Render chart in right panel
+  const chartCfg = { colorMode: 'dark', highlightIndex: hiIdx, ptOffset: 0, basePt: 60, extraTop: 0, extraBottom: 0 };
+  let chartBody = '';
+  if (chartType === 'bar')    chartBody = renderBar(data, chartC, rightW, H, chartCfg);
+  if (chartType === 'line')   chartBody = renderLine(data, chartC, rightW, H, chartCfg);
+  if (chartType === 'ranked') chartBody = renderRanked(data, chartC, rightW, H, chartCfg);
+  if (chartType === 'stat')   chartBody = renderStat(data, chartC, rightW, H, chartCfg);
+  if (chartType === 'table')  chartBody = renderTable(data, chartC, rightW, H, chartCfg);
+
+  const chartGroup = `<g transform="translate(${splitX},0)">${chartBody}</g>`;
+
+  return `${leftBg}${rightBg}${topAccent}${titleSVG}${logoBlock}${sourceBlock}${divider}${chartGroup}`;
+}
+
 // ── Main render ───────────────────────────────────────────────────────────────
 function render() {
   const W = 800, H = 800 * state.exportH / state.exportW;
-  const C = COLORS[state.colorMode];
+  const C = state.paintingKey ? getPaintingColors() : COLORS[state.colorMode];
   const title = document.getElementById('chart-title').value || defaultTitles[state.chartType];
   const subtitle = document.getElementById('chart-subtitle').value || 'Source: AirOps Research, 2026';
   const rawData = document.getElementById('data-input').value;
@@ -693,46 +903,57 @@ function render() {
   const extraTop = is45 ? Math.round(H * 0.13) : 0;
   const extraBottom = is45 ? Math.round(H * 0.13) : 0;
 
-  // Title (with auto-wrap)
-  const { svg: titleBlock, extraPt: extraTitlePt } = buildTitleSVG(title, W, C);
-  const cfg = { colorMode: state.colorMode, highlightIndex: hiIdx, ptOffset: extraTitlePt + extraTop, extraTop, extraBottom };
+  let backgroundLayer, svgContent;
 
-  // Chart body
-  let chartBody = '';
-  if (state.chartType === 'bar')    chartBody = renderBar(data, C, W, H, cfg);
-  if (state.chartType === 'line')   chartBody = renderLine(data, C, W, H, cfg);
-  if (state.chartType === 'ranked') chartBody = renderRanked(data, C, W, H, cfg);
-  if (state.chartType === 'stat')   chartBody = renderStat(data, C, W, H, cfg);
-  if (state.chartType === 'table')  chartBody = renderTable(data, C, W, H, cfg);
+  if (state.layoutMode === 'split') {
+    backgroundLayer = '';
+    svgContent = renderSplitLayout({ W, H, title, subtitle, data,
+      showLogo, showSource, hiIdx, colorMode: state.colorMode, chartType: state.chartType });
+  } else {
+    backgroundLayer = state.paintingKey
+      ? buildPaintingBackground(state.paintingKey, W, H, false)
+      : `<rect width="${W}" height="${H}" fill="${C.bg}"/>`;
 
-  // Source / subtitle
-  const sourceBlock = showSource
-    ? `<text x="40" y="${H - 28 - extraBottom}" font-family="'Saans Mono','DM Mono',monospace" font-size="12"
-        font-weight="500" letter-spacing="0.06em" fill="${C.subtitle}">${escSVG(subtitle.toUpperCase())}</text>`
-    : '';
+    // Title (with auto-wrap) — shifted into safe zone for portrait
+    const { svg: titleBlock, extraPt: extraTitlePt } = buildTitleSVG(title, W, C, extraTop);
+    const cfg = { colorMode: state.colorMode, highlightIndex: hiIdx, ptOffset: extraTitlePt + extraTop, extraTop, extraBottom };
 
-  // Logo
-  const logoW = W * 0.10;
-  const logoH = logoW * 252 / 784;
-  const logoBlock = showLogo
-    ? `<g transform="translate(${W - 56 - logoW}, ${H - 28 - logoH - extraBottom})">${logoSVG(C.logoFill, logoW)}</g>`
-    : '';
+    // Chart body
+    let chartBody = '';
+    if (state.chartType === 'bar')    chartBody = renderBar(data, C, W, H, cfg);
+    if (state.chartType === 'line')   chartBody = renderLine(data, C, W, H, cfg);
+    if (state.chartType === 'ranked') chartBody = renderRanked(data, C, W, H, cfg);
+    if (state.chartType === 'stat')   chartBody = renderStat(data, C, W, H, cfg);
+    if (state.chartType === 'table')  chartBody = renderTable(data, C, W, H, cfg);
 
-  // Border line at top
-  const topAccent = `<line x1="40" y1="16" x2="${W - 40}" y2="16" stroke="${C.border}" stroke-width="1"/>`;
+    // Source / subtitle
+    const sourceBlock = showSource
+      ? `<text x="40" y="${H - 28 - extraBottom}" font-family="'Saans Mono','DM Mono',monospace" font-size="12"
+          font-weight="500" letter-spacing="0.06em" fill="${C.subtitle}">${escSVG(subtitle.toUpperCase())}</text>`
+      : '';
+
+    // Logo
+    const logoW = W * 0.10;
+    const logoH = logoW * 252 / 784;
+    const logoBlock = showLogo
+      ? `<g transform="translate(${W - 56 - logoW}, ${H - 28 - logoH - extraBottom})">${logoSVG(C.logoFill, logoW)}</g>`
+      : '';
+
+    // Border line at top — also inside safe zone
+    const accentY = 16 + extraTop;
+    const topAccent = `<line x1="40" y1="${accentY}" x2="${W - 40}" y2="${accentY}" stroke="${C.border}" stroke-width="1"/>`;
+
+    svgContent = `${topAccent}${titleBlock}${chartBody}${sourceBlock}${logoBlock}`;
+  }
 
   // Safe zone preview indicator (not exported)
-  const safeZoneRect = is45
+  const safeZoneRect = is45 && state.layoutMode !== 'split'
     ? `<rect x="20" y="${extraTop}" width="${W - 40}" height="${H - extraTop - extraBottom}" fill="none" stroke="rgba(255,100,100,0.35)" stroke-width="1.5" stroke-dasharray="6,4"/>`
     : '';
 
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">
-  <rect width="${W}" height="${H}" fill="${C.bg}"/>
-  ${topAccent}
-  ${titleBlock}
-  ${chartBody}
-  ${sourceBlock}
-  ${logoBlock}
+  ${backgroundLayer}
+  ${svgContent}
   ${safeZoneRect}
 </svg>`;
 
@@ -757,7 +978,7 @@ function render() {
 // ── Export ────────────────────────────────────────────────────────────────────
 function downloadPNG() {
   const W = state.exportW, H = state.exportH;
-  const C = COLORS[state.colorMode];
+  const C = state.paintingKey ? getPaintingColors() : COLORS[state.colorMode];
   const title = document.getElementById('chart-title').value || defaultTitles[state.chartType];
   const subtitle = document.getElementById('chart-subtitle').value || 'Source: AirOps Research, 2026';
   const rawData = document.getElementById('data-input').value;
@@ -775,26 +996,40 @@ function downloadPNG() {
   const extraTop = is45 ? Math.round(VH * 0.13) : 0;
   const extraBottom = is45 ? Math.round(VH * 0.13) : 0;
 
-  // Title (with auto-wrap)
-  const { svg: titleBlock, extraPt: extraTitlePt } = buildTitleSVG(title, VW, C);
-  const exportCfg = { colorMode: state.colorMode, highlightIndex: hiIdx, ptOffset: extraTitlePt + extraTop, extraTop, extraBottom };
+  let backgroundLayer, svgContent;
 
-  let chartBody = '';
-  if (state.chartType === 'bar')    chartBody = renderBar(data, C, VW, VH, exportCfg);
-  if (state.chartType === 'line')   chartBody = renderLine(data, C, VW, VH, exportCfg);
-  if (state.chartType === 'ranked') chartBody = renderRanked(data, C, VW, VH, exportCfg);
-  if (state.chartType === 'stat')   chartBody = renderStat(data, C, VW, VH, exportCfg);
-  if (state.chartType === 'table')  chartBody = renderTable(data, C, VW, VH, exportCfg);
+  if (state.layoutMode === 'split') {
+    backgroundLayer = '';
+    svgContent = renderSplitLayout({ W: VW, H: VH, title, subtitle, data,
+      showLogo, showSource, hiIdx, colorMode: state.colorMode, chartType: state.chartType });
+  } else {
+    backgroundLayer = state.paintingKey
+      ? buildPaintingBackground(state.paintingKey, VW, VH, true)
+      : `<rect width="${VW}" height="${VH}" fill="${C.bg}"/>`;
 
-  const logoW = VW * 0.10;
-  const logoH = logoW * 252 / 784;
-  const sourceBlock = showSource ? `<text x="40" y="${VH - 28 - extraBottom}" font-family="'Saans Mono','DM Mono',monospace" font-size="12" font-weight="500" letter-spacing="0.06em" fill="${C.subtitle}">${escSVG(subtitle.toUpperCase())}</text>` : '';
-  const logoBlock = showLogo ? `<g transform="translate(${VW - 56 - logoW}, ${VH - 28 - logoH - extraBottom})">${logoSVG(C.logoFill, logoW)}</g>` : '';
-  const topAccent = `<line x1="40" y1="16" x2="${VW - 40}" y2="16" stroke="${C.border}" stroke-width="1"/>`;
+    const { svg: titleBlock, extraPt: extraTitlePt } = buildTitleSVG(title, VW, C, extraTop);
+    const exportCfg = { colorMode: state.colorMode, highlightIndex: hiIdx, ptOffset: extraTitlePt + extraTop, extraTop, extraBottom };
+
+    let chartBody = '';
+    if (state.chartType === 'bar')    chartBody = renderBar(data, C, VW, VH, exportCfg);
+    if (state.chartType === 'line')   chartBody = renderLine(data, C, VW, VH, exportCfg);
+    if (state.chartType === 'ranked') chartBody = renderRanked(data, C, VW, VH, exportCfg);
+    if (state.chartType === 'stat')   chartBody = renderStat(data, C, VW, VH, exportCfg);
+    if (state.chartType === 'table')  chartBody = renderTable(data, C, VW, VH, exportCfg);
+
+    const logoW = VW * 0.10;
+    const logoH = logoW * 252 / 784;
+    const sourceBlock = showSource ? `<text x="40" y="${VH - 28 - extraBottom}" font-family="'Saans Mono','DM Mono',monospace" font-size="12" font-weight="500" letter-spacing="0.06em" fill="${C.subtitle}">${escSVG(subtitle.toUpperCase())}</text>` : '';
+    const logoBlock = showLogo ? `<g transform="translate(${VW - 56 - logoW}, ${VH - 28 - logoH - extraBottom})">${logoSVG(C.logoFill, logoW)}</g>` : '';
+    const accentY = 16 + extraTop;
+    const topAccent = `<line x1="40" y1="${accentY}" x2="${VW - 40}" y2="${accentY}" stroke="${C.border}" stroke-width="1"/>`;
+
+    svgContent = `${topAccent}${titleBlock}${chartBody}${sourceBlock}${logoBlock}`;
+  }
 
   const svgStr = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${VW} ${VH}" width="${W}" height="${H}">
-  <rect width="${VW}" height="${VH}" fill="${C.bg}"/>
-  ${topAccent}${titleBlock}${chartBody}${sourceBlock}${logoBlock}
+  ${backgroundLayer}
+  ${svgContent}
 </svg>`;
 
   const blob = new Blob([svgStr], { type: 'image/svg+xml' });
@@ -915,12 +1150,43 @@ document.getElementById('download-btn').addEventListener('click', () => {
 
 window.addEventListener('resize', render);
 
+// ── Layout buttons ────────────────────────────────────────────────────────────
+document.getElementById('layout-grid').addEventListener('click', e => {
+  const btn = e.target.closest('.mode-btn');
+  if (!btn) return;
+  document.querySelectorAll('#layout-grid .mode-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  state.layoutMode = btn.dataset.layout;
+  // Disable painting grid when split is active
+  const pgrid = document.getElementById('painting-grid');
+  if (state.layoutMode === 'split') {
+    pgrid.classList.add('disabled');
+    state.paintingKey = null;
+    document.querySelectorAll('.painting-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector('.painting-btn.none-btn').classList.add('active');
+  } else {
+    pgrid.classList.remove('disabled');
+  }
+  render();
+});
+
+// ── Painting buttons ──────────────────────────────────────────────────────────
+document.getElementById('painting-grid').addEventListener('click', e => {
+  const btn = e.target.closest('.painting-btn');
+  if (!btn) return;
+  document.querySelectorAll('.painting-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const key = btn.dataset.painting;
+  state.paintingKey = key === 'none' ? null : key;
+  render();
+});
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 document.getElementById('data-input').value = defaultData.bar;
 document.getElementById('chart-title').value = '';
 document.getElementById('chart-subtitle').value = '';
 updateHighlightOptions();
-render();
+prefetchPaintings().then(render);
 </script>
 </body>
 </html>
