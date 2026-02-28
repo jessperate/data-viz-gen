@@ -640,7 +640,7 @@ function renderTable(data, C, W, H, cfg) {
 }
 
 // ── Text wrap helpers ─────────────────────────────────────────────────────────
-function wrapText(text, maxWidth, fontSize, charScaleFactor = 0.52) {
+function wrapText(text, maxWidth, fontSize, charScaleFactor = 0.57) {
   const maxChars = Math.floor(maxWidth / (fontSize * charScaleFactor));
   if (text.length <= maxChars) return [text];
   const words = text.split(' ');
