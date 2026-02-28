@@ -463,7 +463,7 @@ function logoSVG(fill, width = 80) {
 function renderBar(data, C, W, H, cfg) {
   const { labels, values } = data;
   const n = labels.length;
-  const pl = 56, pr = 32, pb = 64;
+  const pl = 56, pr = 32, pb = 90;
   const pt = 100 + (cfg.ptOffset || 0);
   const chartW = W - pl - pr;
   const chartH = H - pt - pb;
@@ -505,7 +505,7 @@ function renderBar(data, C, W, H, cfg) {
 function renderLine(data, C, W, H, cfg) {
   const { labels, values } = data;
   const n = labels.length;
-  const pl = 56, pr = 32, pb = 64;
+  const pl = 56, pr = 32, pb = 90;
   const pt = 100 + (cfg.ptOffset || 0);
   const chartW = W - pl - pr;
   const chartH = H - pt - pb;
@@ -553,7 +553,7 @@ function renderLine(data, C, W, H, cfg) {
 function renderRanked(data, C, W, H, cfg) {
   const { labels, values } = data;
   const n = Math.min(labels.length, 8);
-  const pl = 56, pr = 48, pb = 40;
+  const pl = 56, pr = 48, pb = 80;
   const pt = 90 + (cfg.ptOffset || 0);
   const chartH = H - pt - pb;
   const rowH = chartH / n;
@@ -612,7 +612,7 @@ function renderTable(data, C, W, H, cfg) {
   const pt = 90 + (cfg.ptOffset || 0);
   const tableW = W - pl - pr;
   const headerH = 40;
-  const availH = H - pt - 60;
+  const availH = H - pt - 80;
   const rowH = Math.max(32, Math.min(60, (availH - headerH) / n));
   const colW = tableW / headers.length;
 
@@ -715,7 +715,7 @@ function render() {
   const logoW = W * 0.10;
   const logoH = logoW * 252 / 784;
   const logoBlock = showLogo
-    ? `<g transform="translate(${W - 56 - logoW}, ${H - 48 - logoH - extraBottom})">${logoSVG(C.logoFill, logoW)}</g>`
+    ? `<g transform="translate(${W - 56 - logoW}, ${H - 28 - logoH - extraBottom})">${logoSVG(C.logoFill, logoW)}</g>`
     : '';
 
   // Border line at top
@@ -789,7 +789,7 @@ function downloadPNG() {
   const logoW = VW * 0.10;
   const logoH = logoW * 252 / 784;
   const sourceBlock = showSource ? `<text x="40" y="${VH - 28 - extraBottom}" font-family="'Saans Mono','DM Mono',monospace" font-size="12" font-weight="500" letter-spacing="0.06em" fill="${C.subtitle}">${escSVG(subtitle.toUpperCase())}</text>` : '';
-  const logoBlock = showLogo ? `<g transform="translate(${VW - 56 - logoW}, ${VH - 48 - logoH - extraBottom})">${logoSVG(C.logoFill, logoW)}</g>` : '';
+  const logoBlock = showLogo ? `<g transform="translate(${VW - 56 - logoW}, ${VH - 28 - logoH - extraBottom})">${logoSVG(C.logoFill, logoW)}</g>` : '';
   const topAccent = `<line x1="40" y1="16" x2="${VW - 40}" y2="16" stroke="${C.border}" stroke-width="1"/>`;
 
   const svgStr = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${VW} ${VH}" width="${W}" height="${H}">
