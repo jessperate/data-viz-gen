@@ -1117,7 +1117,7 @@ function renderPie(data, C, W, H, cfg) {
   const midAngles = [];
   const fracs = [];
   let angle = -Math.PI / 2;
-  const dividerColor = C.bg === 'transparent' ? 'rgba(255,255,255,0.6)' : C.bg;
+  const dividerColor = C.bg === 'transparent' ? 'none' : C.bg;
 
   for (let i = 0; i < n; i++) {
     const frac = values[i] / total;
