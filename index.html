@@ -715,7 +715,7 @@ function renderStat(data, C, W, H, cfg) {
   const safeTop = cfg.extraTop || 0;
   const safeBottom = cfg.extraBottom || 0;
   // Responsive font size — scale down on short canvases
-  const fontSize = Math.min(W * 0.18, H * 0.29, 140);
+  const fontSize = Math.min(W * 0.30, H * 0.44, 220);
   // Center between title area bottom and bottom chrome top
   const titleClear = safeTop + 80;
   const chromeClear = H - safeBottom - 56;
@@ -725,16 +725,16 @@ function renderStat(data, C, W, H, cfg) {
     font-family="'Serrif VF',Georgia,serif" font-size="${fontSize}px"
     font-weight="400" letter-spacing="-0.02em" fill="${C.title}">${value}</text>`;
 
-  const pillH = 28, pillPad = 16;
-  const labelY = cy + Math.min(W * 0.10, 80);
-  out += `<rect x="${cx - label.length * 4.5 - pillPad}" y="${labelY}" width="${label.length * 9 + pillPad * 2}" height="${pillH}" fill="${C.pillBg}"/>
+  const pillH = 36, pillPad = 18;
+  const labelY = cy + Math.min(W * 0.12, 110);
+  out += `<rect x="${cx - label.length * 5.5 - pillPad}" y="${labelY}" width="${label.length * 11 + pillPad * 2}" height="${pillH}" fill="${C.pillBg}"/>
   <text x="${cx}" y="${labelY + pillH * 0.65}" text-anchor="middle"
-    font-family="'Saans Mono','DM Mono',monospace" font-size="13" font-weight="500"
+    font-family="'Saans Mono','DM Mono',monospace" font-size="18" font-weight="500"
     letter-spacing="0.08em" text-transform="uppercase" fill="${C.pillText}">${label.toUpperCase()}</text>`;
 
   if (sub) {
-    out += `<text x="${cx}" y="${labelY + pillH + 24}" text-anchor="middle"
-      font-family="'Saans Mono','DM Mono',monospace" font-size="13" fill="${C.subtitle}">${sub}</text>`;
+    out += `<text x="${cx}" y="${labelY + pillH + 28}" text-anchor="middle"
+      font-family="'Saans Mono','DM Mono',monospace" font-size="16" fill="${C.subtitle}">${sub}</text>`;
   }
   return out;
 }
@@ -864,9 +864,6 @@ function renderSplitLayout({ W, H, title, subtitle, data, showLogo, showSource, 
   const subtitleColor = colorMode === 'light' ? '#676c79' : 'rgba(255,255,255,0.55)';
   const logoFillColor = colorMode === 'light' ? '#001408' : '#ffffff';
 
-  // Top accent (full width)
-  const topAccent = `<line x1="40" y1="16" x2="${W - 40}" y2="16" stroke="${C.border}" stroke-width="1"/>`;
-
   // Left panel background
   const leftBg = `<rect x="0" y="0" width="${splitX}" height="${H}" fill="${C.bg}"/>`;
 
@@ -892,6 +889,10 @@ function renderSplitLayout({ W, H, title, subtitle, data, showLogo, showSource, 
         font-weight="500" letter-spacing="0.06em" fill="${subtitleColor}">${escSVG(subtitle.toUpperCase())}</text>`
     : '';
 
+  // Bottom accent line above logo/source chrome
+  const accentY = H - 28 - logoH - 10;
+  const bottomAccent = `<line x1="40" y1="${accentY}" x2="${splitX - 4}" y2="${accentY}" stroke="${C.border}" stroke-width="1"/>`;
+
   // Right chart colors
   const chartC = { ...COLORS.dark, bg: C.splitPanelBg, barFill: '#CCFFE0', barStroke: '#00a854' };
 
@@ -907,7 +908,7 @@ function renderSplitLayout({ W, H, title, subtitle, data, showLogo, showSource, 
 
   const chartGroup = `<g transform="translate(${splitX},0)">${chartBody}</g>`;
 
-  return `${leftBg}${rightBg}${topAccent}${titleSVG}${logoBlock}${sourceBlock}${divider}${chartGroup}`;
+  return `${leftBg}${rightBg}${titleSVG}${bottomAccent}${logoBlock}${sourceBlock}${divider}${chartGroup}`;
 }
 
 // ── Main render ───────────────────────────────────────────────────────────────
@@ -965,11 +966,11 @@ function render() {
       ? `<g transform="translate(${W - 56 - logoW}, ${H - 28 - logoH - extraBottom})">${logoSVG(C.logoFill, logoW)}</g>`
       : '';
 
-    // Border line at top — also inside safe zone
-    const accentY = 16 + extraTop;
-    const topAccent = `<line x1="40" y1="${accentY}" x2="${W - 40}" y2="${accentY}" stroke="${C.border}" stroke-width="1"/>`;
-
-    svgContent = `${topAccent}${titleBlock}${chartBody}${sourceBlock}${logoBlock}`;
+    const showBottomAccent = state.chartType === 'stat' || state.chartType === 'pie';
+    const bottomAccent = showBottomAccent
+      ? `<line x1="40" y1="${H - 28 - logoH - extraBottom - 10}" x2="${W - 40}" y2="${H - 28 - logoH - extraBottom - 10}" stroke="${C.border}" stroke-width="1"/>`
+      : '';
+    svgContent = `${titleBlock}${chartBody}${bottomAccent}${sourceBlock}${logoBlock}`;
   }
 
   // Safe zone preview indicator (not exported)
@@ -1048,10 +1049,11 @@ function downloadPNG() {
     const logoH = logoW * 252 / 784;
     const sourceBlock = showSource ? `<text x="40" y="${VH - 28 - extraBottom}" font-family="'Saans Mono','DM Mono',monospace" font-size="12" font-weight="500" letter-spacing="0.06em" fill="${C.subtitle}">${escSVG(subtitle.toUpperCase())}</text>` : '';
     const logoBlock = showLogo ? `<g transform="translate(${VW - 56 - logoW}, ${VH - 28 - logoH - extraBottom})">${logoSVG(C.logoFill, logoW)}</g>` : '';
-    const accentY = 16 + extraTop;
-    const topAccent = `<line x1="40" y1="${accentY}" x2="${VW - 40}" y2="${accentY}" stroke="${C.border}" stroke-width="1"/>`;
-
-    svgContent = `${topAccent}${titleBlock}${chartBody}${sourceBlock}${logoBlock}`;
+    const showBottomAccent = state.chartType === 'stat' || state.chartType === 'pie';
+    const bottomAccent = showBottomAccent
+      ? `<line x1="40" y1="${VH - 28 - logoH - extraBottom - 10}" x2="${VW - 40}" y2="${VH - 28 - logoH - extraBottom - 10}" stroke="${C.border}" stroke-width="1"/>`
+      : '';
+    svgContent = `${titleBlock}${chartBody}${bottomAccent}${sourceBlock}${logoBlock}`;
   }
 
   const svgStr = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${VW} ${VH}" width="${W}" height="${H}">
@@ -1110,18 +1112,6 @@ function renderPie(data, C, W, H, cfg) {
   const r = Math.round(Math.min((W - 144) / 2, (availH - 52) * 0.46));
   const cy = Math.round(pt + (availH - 52) * 0.48);
 
-  // Radial gradients — shared geometry, per-slice color (light from upper-center)
-  let defs = '<defs>';
-  for (let i = 0; i < n; i++) {
-    const base = PALETTE[i % PALETTE.length];
-    const dark = darkenHex(base, 0.22);
-    defs += `<radialGradient id="pgr${i}" cx="${cx}" cy="${cy - r * 0.2}" r="${r * 1.05}" gradientUnits="userSpaceOnUse">
-      <stop offset="15%" stop-color="${base}"/>
-      <stop offset="100%" stop-color="${dark}"/>
-    </radialGradient>`;
-  }
-  defs += '</defs>';
-
   // Slices
   let slices = '';
   const midAngles = [];
@@ -1138,7 +1128,7 @@ function renderPie(data, C, W, H, cfg) {
     const x1 = cx + r * Math.cos(angle), y1 = cy + r * Math.sin(angle);
     const x2 = cx + r * Math.cos(endAngle), y2 = cy + r * Math.sin(endAngle);
     slices += `<path d="M${x1.toFixed(1)} ${y1.toFixed(1)} A${r} ${r} 0 ${sweep > Math.PI ? 1 : 0} 1 ${x2.toFixed(1)} ${y2.toFixed(1)} L${cx} ${cy} Z"
-      fill="url(#pgr${i})" stroke="${dividerColor}" stroke-width="2" stroke-linejoin="round"/>`;
+      fill="${PALETTE[i % PALETTE.length]}" stroke="${dividerColor}" stroke-width="2" stroke-linejoin="round"/>`;
     angle = endAngle;
   }
 
@@ -1163,11 +1153,11 @@ function renderPie(data, C, W, H, cfg) {
     const col = i % cols, row = Math.floor(i / cols);
     const lx = 40 + col * colW, ly = legendTop + row * 16;
     const lbl = labels[i].length > 18 ? labels[i].slice(0, 16) + '…' : labels[i];
-    legend += `<rect x="${lx}" y="${ly}" width="9" height="9" rx="1" fill="url(#pgr${i})"/>`;
+    legend += `<rect x="${lx}" y="${ly}" width="9" height="9" rx="1" fill="${PALETTE[i % PALETTE.length]}"/>`;
     legend += `<text x="${lx+13}" y="${ly+8}" font-family="'Saans Mono','DM Mono',monospace" font-size="11" fill="${C.axisTick}">${escSVG(lbl)}</text>`;
   }
 
-  return `${defs}${slices}${labels_svg}${legend}`;
+  return `${slices}${labels_svg}${legend}`;
 }
 
 const CHART_NAMES = { bar: 'Bar Chart', line: 'Line Chart', stat: 'Stat', ranked: 'Ranked', table: 'Table', pie: 'Pie Chart' };
