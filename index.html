@@ -575,8 +575,10 @@ function logoSVG(fill, width = 80) {
 function renderBar(data, C, W, H, cfg) {
   const { labels, values } = data;
   const n = labels.length;
-  const pl = 56, pr = 32, pb = 90;
-  const pt = (cfg.basePt ?? 100) + (cfg.ptOffset || 0);
+  const pl = 56, pr = 32;
+  const pb = Math.round(Math.max(62, Math.min(90, H * 0.112))) + (cfg.extraBottom || 0);
+  const pt_base = Math.round(Math.max(76, Math.min(100, H * 0.125)));
+  const pt = (cfg.basePt ?? pt_base) + (cfg.ptOffset || 0);
   const chartW = W - pl - pr;
   const chartH = H - pt - pb;
   const maxVal = Math.max(...values);
@@ -604,8 +606,9 @@ function renderBar(data, C, W, H, cfg) {
     const isHi = i === hiIdx;
     const fill = isHi ? C.barAccent : C.barFill;
     const stroke = isHi ? C.barAccentStroke : C.barStroke;
+    const valueLabelY = Math.max(pt + 15, y - 6);
     bars += `<rect x="${x}" y="${y}" width="${barW}" height="${bh}" fill="${fill}" stroke="${stroke}" stroke-width="0.8"/>
-    <text x="${x + barW / 2}" y="${y - 6}" text-anchor="middle" font-family="'Saans Mono','DM Mono',monospace" font-size="13" font-weight="500" fill="${C.valueText}">${values[i]}</text>
+    <text x="${x + barW / 2}" y="${valueLabelY}" text-anchor="middle" font-family="'Saans Mono','DM Mono',monospace" font-size="13" font-weight="500" fill="${C.valueText}">${values[i]}</text>
     <text x="${x + barW / 2}" y="${pt + chartH + 18}" text-anchor="middle" font-family="'Saans Mono','DM Mono',monospace" font-size="13" fill="${C.axisTick}">${labels[i].toUpperCase()}</text>`;
   }
 
@@ -617,8 +620,10 @@ function renderBar(data, C, W, H, cfg) {
 function renderLine(data, C, W, H, cfg) {
   const { labels, values } = data;
   const n = labels.length;
-  const pl = 56, pr = 32, pb = 90;
-  const pt = (cfg.basePt ?? 100) + (cfg.ptOffset || 0);
+  const pl = 56, pr = 32;
+  const pb = Math.round(Math.max(62, Math.min(90, H * 0.112))) + (cfg.extraBottom || 0);
+  const pt_base = Math.round(Math.max(76, Math.min(100, H * 0.125)));
+  const pt = (cfg.basePt ?? pt_base) + (cfg.ptOffset || 0);
   const chartW = W - pl - pr;
   const chartH = H - pt - pb;
   const maxVal = Math.max(...values) * 1.05;
@@ -645,7 +650,7 @@ function renderLine(data, C, W, H, cfg) {
   pts.forEach(([x, y], i) => {
     const isHi = i === hiIdx;
     dots += `<circle cx="${x}" cy="${y}" r="${isHi ? 6 : 4}" fill="${isHi ? C.barAccent : C.lineStroke}" stroke="${C.bg}" stroke-width="2"/>`;
-    if (isHi) dots += `<text x="${x}" y="${y - 14}" text-anchor="middle" font-family="'Saans Mono','DM Mono',monospace" font-size="13" font-weight="500" fill="${C.valueText}">${values[i]}</text>`;
+    if (isHi) dots += `<text x="${x}" y="${Math.max(pt + 14, y - 14)}" text-anchor="middle" font-family="'Saans Mono','DM Mono',monospace" font-size="13" font-weight="500" fill="${C.valueText}">${values[i]}</text>`;
   });
 
   // X labels
@@ -665,8 +670,10 @@ function renderLine(data, C, W, H, cfg) {
 function renderRanked(data, C, W, H, cfg) {
   const { labels, values } = data;
   const n = Math.min(labels.length, 8);
-  const pl = 56, pr = 48, pb = 80;
-  const pt = (cfg.basePt ?? 90) + (cfg.ptOffset || 0);
+  const pl = 56, pr = 48;
+  const pb = Math.round(Math.max(56, Math.min(80, H * 0.100))) + (cfg.extraBottom || 0);
+  const pt_base = Math.round(Math.max(68, Math.min(90, H * 0.112)));
+  const pt = (cfg.basePt ?? pt_base) + (cfg.ptOffset || 0);
   const chartH = H - pt - pb;
   const rowH = chartH / n;
   const maxVal = Math.max(...values);
@@ -697,10 +704,15 @@ function renderStat(data, C, W, H, cfg) {
   const cx = W / 2;
   const safeTop = cfg.extraTop || 0;
   const safeBottom = cfg.extraBottom || 0;
-  const cy = (safeTop + (H - safeBottom)) / 2 - 20;
+  // Responsive font size — scale down on short canvases
+  const fontSize = Math.min(W * 0.18, H * 0.29, 140);
+  // Center between title area bottom and bottom chrome top
+  const titleClear = safeTop + 80;
+  const chromeClear = H - safeBottom - 56;
+  const cy = (titleClear + chromeClear) / 2;
 
   let out = `<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="middle"
-    font-family="'Serrif VF',Georgia,serif" font-size="${Math.min(W * 0.18, 140)}px"
+    font-family="'Serrif VF',Georgia,serif" font-size="${fontSize}px"
     font-weight="400" letter-spacing="-0.02em" fill="${C.title}">${value}</text>`;
 
   const pillH = 28, pillPad = 16;
@@ -721,10 +733,12 @@ function renderTable(data, C, W, H, cfg) {
   const { headers, rows } = data;
   const n = Math.min(rows.length, 8);
   const pl = 40, pr = 40;
-  const pt = (cfg.basePt ?? 90) + (cfg.ptOffset || 0);
+  const pb = Math.round(Math.max(56, Math.min(80, H * 0.100))) + (cfg.extraBottom || 0);
+  const pt_base = Math.round(Math.max(68, Math.min(90, H * 0.112)));
+  const pt = (cfg.basePt ?? pt_base) + (cfg.ptOffset || 0);
   const tableW = W - pl - pr;
   const headerH = 40;
-  const availH = H - pt - 80;
+  const availH = H - pt - pb;
   const rowH = Math.max(32, Math.min(60, (availH - headerH) / n));
   const colW = tableW / headers.length;
 
