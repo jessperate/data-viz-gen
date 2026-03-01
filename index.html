@@ -978,10 +978,13 @@ function render() {
     ? `<rect x="20" y="${extraTop}" width="${W - 40}" height="${H - extraTop - extraBottom}" fill="none" stroke="rgba(255,100,100,0.35)" stroke-width="1.5" stroke-dasharray="6,4"/>`
     : '';
 
+  const borderStroke = `<rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" fill="none" stroke="#00FF64" stroke-width="1"/>`;
+
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">
   ${backgroundLayer}
   ${svgContent}
   ${safeZoneRect}
+  ${borderStroke}
 </svg>`;
 
   const canvas = document.getElementById('chart-canvas');
@@ -1056,9 +1059,12 @@ function downloadPNG() {
     svgContent = `${titleBlock}${chartBody}${bottomAccent}${sourceBlock}${logoBlock}`;
   }
 
+  const borderStroke = `<rect x="0.5" y="0.5" width="${VW - 1}" height="${VH - 1}" fill="none" stroke="#00FF64" stroke-width="1"/>`;
+
   const svgStr = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${VW} ${VH}" width="${W}" height="${H}">
   ${backgroundLayer}
   ${svgContent}
+  ${borderStroke}
 </svg>`;
 
   const blob = new Blob([svgStr], { type: 'image/svg+xml' });
