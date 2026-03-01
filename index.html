@@ -684,7 +684,21 @@ function renderRanked(data, C, W, H, cfg) {
   const rowH = chartH / n;
   const maxVal = Math.max(...values);
   const maxBarW = W - pl - pr - 70;
-  const hiIdx = cfg.highlightIndex >= 0 ? cfg.highlightIndex : 0; // default: first (highest)
+  const hiIdx = cfg.highlightIndex >= 0 ? cfg.highlightIndex : 0;
+
+  // X-axis gridlines + scale labels
+  const ticks = 4;
+  let gridLines = '';
+  for (let i = 0; i <= ticks; i++) {
+    const x = Math.round(pl + (i / ticks) * maxBarW);
+    const val = Math.round((i / ticks) * maxVal);
+    gridLines += `<line x1="${x}" y1="${pt}" x2="${x}" y2="${pt + chartH}" stroke="${C.gridLine}" stroke-width="1"/>`;
+    gridLines += `<text x="${x}" y="${pt + chartH + 16}" text-anchor="middle" font-family="'Saans Mono','DM Mono',monospace" font-size="11" fill="${C.axisTick}">${val}</text>`;
+  }
+
+  // Axis lines
+  const yAxis = `<line x1="${pl}" y1="${pt}" x2="${pl}" y2="${pt + chartH}" stroke="${C.axisLine}" stroke-width="1"/>`;
+  const xAxis = `<line x1="${pl}" y1="${pt + chartH}" x2="${pl + maxBarW}" y2="${pt + chartH}" stroke="${C.axisLine}" stroke-width="1"/>`;
 
   let rows = '';
   for (let i = 0; i < n; i++) {
@@ -702,7 +716,7 @@ function renderRanked(data, C, W, H, cfg) {
     <text x="${pl + bw + 8}" y="${barY + barH * 0.72}" font-family="'Saans Mono','DM Mono',monospace" font-size="13" font-weight="500" fill="${C.valueText}">${values[i]}</text>
     <text x="${pl}" y="${barY + barH + 13}" font-family="'Saans Mono','DM Mono',monospace" font-size="12" fill="${C.axisTick}">${labels[i].toUpperCase()}</text>`;
   }
-  return rows;
+  return `${gridLines}${yAxis}${xAxis}${rows}`;
 }
 
 function renderStat(data, C, W, H, cfg) {
