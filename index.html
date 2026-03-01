@@ -843,10 +843,10 @@ function buildTitleSVG(title, W, C, yOffset = 0) {
 
 function buildSubcopySVG(text, W, C, titleBottomY) {
   if (!text) return { svg: '', height: 0 };
-  const fontSize = 15;
+  const fontSize = 18;
   const lineH = fontSize * 1.5;
   const lines = wrapTextMulti(text, W - 80, fontSize, 3, 0.48);
-  const y = titleBottomY + 22;
+  const y = titleBottomY + 32;
   const tspans = lines.map((l, i) => `<tspan x="40" dy="${i === 0 ? 0 : lineH}">${escSVG(l)}</tspan>`).join('');
   return {
     svg: `<text x="40" y="${y}" font-family="'Saans','Helvetica Neue',sans-serif" font-size="${fontSize}" font-weight="400" fill="${C.subtitle}">${tspans}</text>`,
@@ -902,18 +902,20 @@ function renderSplitLayout({ W, H, title, subtitle, data, showLogo, showSource, 
   // Logo in left panel bottom
   const logoW = splitX * 0.22;
   const logoH = logoW * 252 / 784;
+  const sourceH = showSource ? 20 : 0;
+  const logoBottomY = H - 28 - sourceH - (showSource ? 10 : 0);
   const logoBlock = showLogo
-    ? `<g transform="translate(${40}, ${H - 28 - logoH})">${logoSVG(logoFillColor, logoW)}</g>`
+    ? `<g transform="translate(${40}, ${logoBottomY - logoH})">${logoSVG(logoFillColor, logoW)}</g>`
     : '';
 
-  // Source in left panel bottom
+  // Source in left panel bottom — below logo
   const sourceBlock = showSource
     ? `<text x="40" y="${H - 28}" font-family="'Saans Mono','DM Mono',monospace" font-size="11"
         font-weight="500" letter-spacing="0.06em" fill="${subtitleColor}">${escSVG(subtitle.toUpperCase())}</text>`
     : '';
 
   // Bottom accent line above logo/source chrome
-  const accentY = H - 28 - logoH - 10;
+  const accentY = logoBottomY - logoH - 10;
   const bottomAccent = `<line x1="40" y1="${accentY}" x2="${splitX - 4}" y2="${accentY}" stroke="${C.border}" stroke-width="1"/>`;
 
   // Right chart colors
