@@ -301,35 +301,29 @@
     <div class="control-label">Background</div>
     <div class="painting-grid" id="painting-grid">
       <button class="painting-btn none-btn active" data-painting="none">None</button>
-      <button class="painting-btn" data-painting="turner-sunrise">
-        <img src="paintings/turner-sunrise.jpg" alt="Golden Dawn" draggable="false">
-      </button>
       <button class="painting-btn" data-painting="bierstadt-sierra">
         <img src="paintings/bierstadt-sierra.jpg" alt="Sierra" draggable="false">
-      </button>
-      <button class="painting-btn" data-painting="church-twilight">
-        <img src="paintings/church-twilight.jpg" alt="Twilight" draggable="false">
-      </button>
-      <button class="painting-btn" data-painting="friedrich-ice">
-        <img src="paintings/friedrich-ice.jpg" alt="Frozen Sea" draggable="false">
-      </button>
-      <button class="painting-btn" data-painting="turner-storm">
-        <img src="paintings/turner-storm.jpg" alt="Storm" draggable="false">
-      </button>
-      <button class="painting-btn" data-painting="monet-sunrise">
-        <img src="paintings/monet-sunrise.jpg" alt="Monet" draggable="false">
-      </button>
-      <button class="painting-btn" data-painting="moran-canyon">
-        <img src="paintings/moran-canyon.jpg" alt="Canyon" draggable="false">
       </button>
       <button class="painting-btn" data-painting="kensett-lake">
         <img src="paintings/kensett-lake.jpg" alt="Lake" draggable="false">
       </button>
-      <button class="painting-btn" data-painting="turner-temeraire">
-        <img src="paintings/turner-temeraire.jpg" alt="Temeraire" draggable="false">
+      <button class="painting-btn" data-painting="constable-haywain">
+        <img src="paintings/constable-haywain.jpg" alt="Hay Wain" draggable="false">
       </button>
-      <button class="painting-btn" data-painting="heade-storm">
-        <img src="paintings/heade-storm.jpg" alt="Heade" draggable="false">
+      <button class="painting-btn" data-painting="monet-waterlilies">
+        <img src="paintings/monet-waterlilies.jpg" alt="Lilies" draggable="false">
+      </button>
+      <button class="painting-btn" data-painting="homer-breezing">
+        <img src="paintings/homer-breezing.jpg" alt="Breezing Up" draggable="false">
+      </button>
+      <button class="painting-btn" data-painting="friedrich-watzmann">
+        <img src="paintings/friedrich-watzmann.jpg" alt="Watzmann" draggable="false">
+      </button>
+      <button class="painting-btn" data-painting="friedrich-ice">
+        <img src="paintings/friedrich-ice.jpg" alt="Frozen Sea" draggable="false">
+      </button>
+      <button class="painting-btn" data-painting="church-tropical">
+        <img src="paintings/church-tropical.jpg" alt="Tropics" draggable="false">
       </button>
     </div>
   </div>
@@ -477,16 +471,14 @@ const COLORS = {
 
 // ── Paintings ─────────────────────────────────────────────────────────────────
 const PAINTINGS = [
-  { key: 'turner-sunrise',    label: 'Golden Dawn', file: 'paintings/turner-sunrise.jpg',    overlay: 0.32 },
-  { key: 'bierstadt-sierra',  label: 'Sierra',      file: 'paintings/bierstadt-sierra.jpg',  overlay: 0.28 },
-  { key: 'church-twilight',   label: 'Twilight',    file: 'paintings/church-twilight.jpg',   overlay: 0.25 },
-  { key: 'friedrich-ice',     label: 'Frozen Sea',  file: 'paintings/friedrich-ice.jpg',     overlay: 0.30 },
-  { key: 'turner-storm',      label: 'Storm',       file: 'paintings/turner-storm.jpg',      overlay: 0.38 },
-  { key: 'monet-sunrise',     label: 'Monet',       file: 'paintings/monet-sunrise.jpg',     overlay: 0.30 },
-  { key: 'moran-canyon',      label: 'Canyon',      file: 'paintings/moran-canyon.jpg',      overlay: 0.28 },
-  { key: 'kensett-lake',      label: 'Lake',        file: 'paintings/kensett-lake.jpg',      overlay: 0.22 },
-  { key: 'turner-temeraire',  label: 'Temeraire',   file: 'paintings/turner-temeraire.jpg',  overlay: 0.30 },
-  { key: 'heade-storm',       label: 'Heade',       file: 'paintings/heade-storm.jpg',       overlay: 0.28 },
+  { key: 'bierstadt-sierra',   label: 'Sierra',      file: 'paintings/bierstadt-sierra.jpg',   overlay: 0.28 },
+  { key: 'kensett-lake',       label: 'Lake',        file: 'paintings/kensett-lake.jpg',        overlay: 0.22 },
+  { key: 'constable-haywain',  label: 'Hay Wain',    file: 'paintings/constable-haywain.jpg',   overlay: 0.28 },
+  { key: 'monet-waterlilies',  label: 'Lilies',      file: 'paintings/monet-waterlilies.jpg',   overlay: 0.25 },
+  { key: 'homer-breezing',     label: 'Breezing Up', file: 'paintings/homer-breezing.jpg',      overlay: 0.28 },
+  { key: 'friedrich-watzmann', label: 'Watzmann',    file: 'paintings/friedrich-watzmann.jpg',  overlay: 0.30 },
+  { key: 'friedrich-ice',      label: 'Frozen Sea',  file: 'paintings/friedrich-ice.jpg',       overlay: 0.30 },
+  { key: 'church-tropical',    label: 'Tropics',     file: 'paintings/church-tropical.jpg',     overlay: 0.28 },
 ];
 const paintingCache = {};
 
@@ -594,7 +586,7 @@ function renderBar(data, C, W, H, cfg) {
   const maxVal = Math.max(...values);
   const hiIdx = cfg.highlightIndex >= 0 && cfg.highlightIndex < n ? cfg.highlightIndex : values.indexOf(maxVal);
 
-  const barW = Math.min(chartW / n * 0.72, 100);
+  const barW = Math.min(chartW / n * 0.85, 120);
   const gap = chartW / n;
 
   // Grid lines
@@ -1235,9 +1227,9 @@ document.getElementById('highlight-select').addEventListener('change', render);
 document.getElementById('show-logo').addEventListener('change', render);
 document.getElementById('show-source').addEventListener('change', render);
 
-document.querySelectorAll('.mode-btn').forEach(btn => {
+document.querySelectorAll('.mode-btn[data-mode]').forEach(btn => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.mode-btn[data-mode]').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     state.colorMode = btn.dataset.mode;
     render();
