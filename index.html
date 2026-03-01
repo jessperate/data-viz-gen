@@ -267,6 +267,10 @@
       <input type="text" id="chart-title" placeholder="AI Citations by Quarter">
     </div>
     <div class="field-group">
+      <label class="field-label">Subcopy</label>
+      <input type="text" id="chart-subcopy" placeholder="Optional body copy below the title">
+    </div>
+    <div class="field-group">
       <label class="field-label">Subtitle / Source</label>
       <input type="text" id="chart-subtitle" placeholder="Source: AirOps Research, 2026">
     </div>
@@ -823,6 +827,19 @@ function buildTitleSVG(title, W, C, yOffset = 0) {
   };
 }
 
+function buildSubcopySVG(text, W, C, titleBottomY) {
+  if (!text) return { svg: '', height: 0 };
+  const fontSize = 15;
+  const lineH = fontSize * 1.5;
+  const lines = wrapTextMulti(text, W - 80, fontSize, 3, 0.48);
+  const y = titleBottomY + 22;
+  const tspans = lines.map((l, i) => `<tspan x="40" dy="${i === 0 ? 0 : lineH}">${escSVG(l)}</tspan>`).join('');
+  return {
+    svg: `<text x="40" y="${y}" font-family="'Saans','Helvetica Neue',sans-serif" font-size="${fontSize}" font-weight="400" fill="${C.subtitle}">${tspans}</text>`,
+    height: Math.round(lines.length * lineH + 24),
+  };
+}
+
 function buildSplitTitleSVG(title, panelW, H, titleColor) {
   const fontSize = Math.min(panelW * 0.095, 52);
   const maxWidth = panelW - 72;
@@ -934,7 +951,9 @@ function render() {
 
     // Title (with auto-wrap) — shifted into safe zone for portrait
     const { svg: titleBlock, extraPt: extraTitlePt } = buildTitleSVG(title, W, C, extraTop);
-    const cfg = { colorMode: state.colorMode, highlightIndex: hiIdx, ptOffset: extraTitlePt + extraTop, extraTop, extraBottom };
+    const subcopy = document.getElementById('chart-subcopy').value;
+    const { svg: subcopyBlock, height: subcopyHeight } = buildSubcopySVG(subcopy, W, C, 52 + extraTop + extraTitlePt);
+    const cfg = { colorMode: state.colorMode, highlightIndex: hiIdx, ptOffset: extraTitlePt + extraTop + subcopyHeight, extraTop, extraBottom };
 
     // Chart body
     let chartBody = '';
@@ -962,7 +981,7 @@ function render() {
     const bottomAccent = showBottomAccent
       ? `<line x1="40" y1="${H - 28 - logoH - extraBottom - 10}" x2="${W - 40}" y2="${H - 28 - logoH - extraBottom - 10}" stroke="${C.border}" stroke-width="1"/>`
       : '';
-    svgContent = `${titleBlock}${chartBody}${bottomAccent}${sourceBlock}${logoBlock}`;
+    svgContent = `${titleBlock}${subcopyBlock}${chartBody}${bottomAccent}${sourceBlock}${logoBlock}`;
   }
 
   // Safe zone preview indicator (not exported)
@@ -1030,7 +1049,9 @@ function downloadPNG() {
       : `<rect width="${VW}" height="${VH}" fill="${C.bg}"/>`;
 
     const { svg: titleBlock, extraPt: extraTitlePt } = buildTitleSVG(title, VW, C, extraTop);
-    const exportCfg = { colorMode: state.colorMode, highlightIndex: hiIdx, ptOffset: extraTitlePt + extraTop, extraTop, extraBottom };
+    const subcopy = document.getElementById('chart-subcopy').value;
+    const { svg: subcopyBlock, height: subcopyHeight } = buildSubcopySVG(subcopy, VW, C, 52 + extraTop + extraTitlePt);
+    const exportCfg = { colorMode: state.colorMode, highlightIndex: hiIdx, ptOffset: extraTitlePt + extraTop + subcopyHeight, extraTop, extraBottom };
 
     let chartBody = '';
     if (state.chartType === 'bar')    chartBody = renderBar(data, C, VW, VH, exportCfg);
@@ -1048,7 +1069,7 @@ function downloadPNG() {
     const bottomAccent = showBottomAccent
       ? `<line x1="40" y1="${VH - 28 - logoH - extraBottom - 10}" x2="${VW - 40}" y2="${VH - 28 - logoH - extraBottom - 10}" stroke="${C.border}" stroke-width="1"/>`
       : '';
-    svgContent = `${titleBlock}${chartBody}${bottomAccent}${sourceBlock}${logoBlock}`;
+    svgContent = `${titleBlock}${subcopyBlock}${chartBody}${bottomAccent}${sourceBlock}${logoBlock}`;
   }
 
   const borderStroke = `<rect x="0.5" y="0.5" width="${VW - 1}" height="${VH - 1}" fill="none" stroke="#00FF64" stroke-width="1"/>`;
@@ -1213,7 +1234,7 @@ document.getElementById('chart-type-grid').addEventListener('click', e => {
   render();
 });
 
-['chart-title', 'chart-subtitle'].forEach(id => {
+['chart-title', 'chart-subcopy', 'chart-subtitle'].forEach(id => {
   document.getElementById(id).addEventListener('input', render);
 });
 
@@ -1289,6 +1310,7 @@ document.getElementById('painting-grid').addEventListener('click', e => {
 // ── Init ──────────────────────────────────────────────────────────────────────
 document.getElementById('data-input').value = defaultData.bar;
 document.getElementById('chart-title').value = '';
+document.getElementById('chart-subcopy').value = '';
 document.getElementById('chart-subtitle').value = '';
 updateHighlightOptions();
 prefetchPaintings().then(render);
