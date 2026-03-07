@@ -177,6 +177,40 @@
     }
     .painting-btn.none-btn.active { background: #000d05; color: #fff; border-color: #000d05; }
     .painting-grid.disabled { opacity: 0.4; pointer-events: none; }
+
+    /* ── Carousel ── */
+    .carousel-slide-list { display: flex; flex-direction: column; gap: 4px; }
+    .carousel-slide-item {
+      display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+      border: 1px solid #ecedef; cursor: pointer; background: #fff; transition: all 0.15s;
+    }
+    .carousel-slide-item:hover { border-color: #008c44; }
+    .carousel-slide-item.active { border-color: #000d05; background: #f8fffb; }
+    .carousel-slide-num { font-family: 'Saans Mono', monospace; font-size: 10px; font-weight: 500; color: #a5aab6; width: 14px; flex-shrink: 0; }
+    .carousel-slide-label { font-family: 'Saans Mono', monospace; font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: #676c79; flex: 1; }
+    .carousel-slide-item.active .carousel-slide-label { color: #000d05; }
+    .carousel-slide-remove { font-size: 14px; color: #d4e8da; cursor: pointer; line-height: 1; padding: 0 2px; background: none; border: none; }
+    .carousel-slide-remove:hover { color: #c84040; }
+    .add-slide-btn {
+      width: 100%; margin-top: 6px; padding: 8px; border: 1px dashed #d4e8da; background: #fff; cursor: pointer;
+      font-family: 'Saans Mono', monospace; font-size: 11px; font-weight: 500;
+      letter-spacing: 0.06em; text-transform: uppercase; color: #008c44; transition: all 0.15s;
+    }
+    .add-slide-btn:hover { border-color: #008c44; background: #f8fffb; }
+    .colorway-grid { display: flex; gap: 6px; }
+    .colorway-btn {
+      width: 40px; height: 28px; cursor: pointer; border: 2px solid transparent; flex-shrink: 0; transition: border-color 0.15s;
+    }
+    .colorway-btn:hover { border-color: #008c44; }
+    .colorway-btn.active { border-color: #EEFF8C; box-shadow: 0 0 0 1px #8a9600; }
+    .carousel-mini-chart-grid { display: flex; gap: 4px; flex-wrap: wrap; }
+    .carousel-mini-chart-btn {
+      padding: 5px 8px; border: 1px solid #ecedef; background: #fff; cursor: pointer;
+      font-family: 'Saans Mono', monospace; font-size: 10px; font-weight: 500;
+      letter-spacing: 0.06em; text-transform: uppercase; color: #676c79; transition: all 0.15s;
+    }
+    .carousel-mini-chart-btn:hover { border-color: #008c44; }
+    .carousel-mini-chart-btn.active { background: #000d05; color: #fff; border-color: #000d05; }
   </style>
 </head>
 <body>
@@ -198,7 +232,7 @@
 
   <!-- Chart type -->
   <div class="control-section">
-    <div class="control-label">Chart Type <span class="count">6</span></div>
+    <div class="control-label">Chart Type <span class="count">7</span></div>
     <div class="chart-type-grid" id="chart-type-grid">
       <button class="chart-type-btn active" data-type="bar">
         <svg class="chart-thumb" viewBox="0 0 52 44" fill="none">
@@ -263,11 +297,20 @@
         </svg>
         <span class="chart-type-label">Pie</span>
       </button>
+      <button class="chart-type-btn" data-type="carousel">
+        <svg class="chart-thumb" viewBox="0 0 52 44" fill="none">
+          <rect x="10" y="4"  width="34" height="26" rx="1" fill="#CCFFE0" stroke="#002910" stroke-width="0.8"/>
+          <rect x="5"  y="9"  width="34" height="26" rx="1" fill="#EEFF8C" stroke="#8a9600" stroke-width="0.8"/>
+          <rect x="0"  y="14" width="34" height="26" rx="1" fill="#fff"    stroke="#002910" stroke-width="0.8"/>
+          <text x="17" y="29" text-anchor="middle" font-family="monospace" font-size="7" fill="#676c79">SLIDE</text>
+        </svg>
+        <span class="chart-type-label">Carousel</span>
+      </button>
     </div>
   </div>
 
   <!-- Content -->
-  <div class="control-section">
+  <div class="control-section" id="section-content">
     <div class="control-label">Content</div>
     <div class="field-group">
       <label class="field-label">Title</label>
@@ -284,7 +327,7 @@
   </div>
 
   <!-- Data -->
-  <div class="control-section">
+  <div class="control-section" id="section-data">
     <div class="control-label">Data</div>
     <div class="field-group">
       <label class="field-label" id="data-hint">One per line — Label: Value</label>
@@ -298,8 +341,107 @@
     </div>
   </div>
 
+  <!-- Carousel panel -->
+  <div id="carousel-panel" style="display:none">
+    <!-- Colorway -->
+    <div class="control-section">
+      <div class="control-label">Colorway</div>
+      <div class="colorway-grid" id="colorway-grid">
+        <button class="colorway-btn" data-colorway="light"    style="background:#F8FFFB;border-color:#d4e8da" title="Light"></button>
+        <button class="colorway-btn active" data-colorway="dark" style="background:#002910" title="Forest"></button>
+        <button class="colorway-btn" data-colorway="lime"     style="background:#EEFF8C" title="Lime"></button>
+        <button class="colorway-btn" data-colorway="midnight" style="background:#000d05" title="Midnight"></button>
+      </div>
+    </div>
+
+    <!-- Slides list -->
+    <div class="control-section">
+      <div class="control-label">Slides</div>
+      <div class="carousel-slide-list" id="carousel-slide-list"></div>
+      <button class="add-slide-btn" id="add-slide-btn">+ Add Data Slide</button>
+      <button class="add-slide-btn" id="add-cta-btn" style="margin-top:4px">+ Add CTA Slide</button>
+    </div>
+
+    <!-- Slide Editor -->
+    <div class="control-section">
+      <!-- Title slide -->
+      <div id="slide-editor-title">
+        <div class="control-label">Title Slide</div>
+        <div class="field-group">
+          <label class="field-label">Title</label>
+          <input type="text" id="carousel-title" placeholder="Your main headline">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Subcopy</label>
+          <input type="text" id="carousel-subcopy" placeholder="Supporting text">
+        </div>
+      </div>
+      <!-- CTA slide -->
+      <div id="slide-editor-cta" style="display:none">
+        <div class="control-label">CTA Slide</div>
+        <div class="field-group">
+          <label class="field-label">Badge Label</label>
+          <input type="text" id="carousel-cta-label" placeholder="airops.com">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Headline (serif)</label>
+          <input type="text" id="carousel-cta-headline" placeholder="Ready to get started?">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Headline line 2 (sans)</label>
+          <input type="text" id="carousel-cta-subheadline" placeholder="Second line (optional)">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Body Copy</label>
+          <input type="text" id="carousel-cta-subcopy" placeholder="Optional supporting line">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Primary Button</label>
+          <input type="text" id="carousel-cta-btn" placeholder="Book a Demo">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Secondary Button</label>
+          <input type="text" id="carousel-cta-btn2" placeholder="Learn More (optional)">
+        </div>
+      </div>
+      <!-- Data slide -->
+      <div id="slide-editor-data" style="display:none">
+        <div class="control-label">Data Slide</div>
+        <div class="field-group">
+          <label class="field-label">Header</label>
+          <input type="text" id="carousel-header" placeholder="Slide headline">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Subhead</label>
+          <input type="text" id="carousel-subhead" placeholder="Source or context">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Chart Type</label>
+          <div class="carousel-mini-chart-grid" id="carousel-chart-grid">
+            <button class="carousel-mini-chart-btn active" data-type="bar">Bar</button>
+            <button class="carousel-mini-chart-btn" data-type="line">Line</button>
+            <button class="carousel-mini-chart-btn" data-type="stat">Stat</button>
+            <button class="carousel-mini-chart-btn" data-type="ranked">Ranked</button>
+            <button class="carousel-mini-chart-btn" data-type="table">Table</button>
+            <button class="carousel-mini-chart-btn" data-type="pie">Pie</button>
+          </div>
+        </div>
+        <div class="field-group">
+          <label class="field-label" id="carousel-data-hint">One per line — Label: Value</label>
+          <textarea id="carousel-data-input" rows="5" placeholder="Q1: 45&#10;Q2: 67&#10;Q3: 89"></textarea>
+        </div>
+        <div class="field-group" id="carousel-highlight-group">
+          <label class="field-label">Highlight</label>
+          <select id="carousel-highlight-select">
+            <option value="max">Highest value (auto)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Layout -->
-  <div class="control-section">
+  <div class="control-section" id="section-layout">
     <div class="control-label">Layout</div>
     <div class="mode-grid" id="layout-grid">
       <button class="mode-btn active" data-layout="standard">Standard</button>
@@ -308,7 +450,7 @@
   </div>
 
   <!-- Background -->
-  <div class="control-section">
+  <div class="control-section" id="section-background">
     <div class="control-label">Background</div>
     <div class="painting-grid" id="painting-grid">
       <button class="painting-btn none-btn active" data-painting="none">None</button>
@@ -353,7 +495,7 @@
   </div>
 
   <!-- Color mode -->
-  <div class="control-section">
+  <div class="control-section" id="section-color-mode">
     <div class="control-label">Color Mode</div>
     <div class="mode-grid">
       <button class="mode-btn active" data-mode="light">Light</button>
@@ -362,7 +504,7 @@
   </div>
 
   <!-- Export size -->
-  <div class="control-section">
+  <div class="control-section" id="section-export-size">
     <div class="control-label">Export Size</div>
     <div class="size-grid">
       <button class="size-btn active" data-w="1080" data-h="1080">
@@ -424,6 +566,13 @@ const state = {
   exportH: 1080,
   paintingKey: null,       // null | string
   layoutMode: 'standard',  // 'standard' | 'split'
+  carouselColorway: 'dark',
+  carouselActiveSlide: 0,
+  carouselSlides: [
+    { type: 'title', title: '', subcopy: '' },
+    { type: 'data',  header: '', subhead: '', chartType: 'bar', data: '' },
+    { type: 'cta',   label: '', headline: '', subheadline: '', subcopy: '', cta: 'Book a Demo', ctaSecondary: '' },
+  ],
 };
 
 // ── Colors ────────────────────────────────────────────────────────────────────
@@ -480,6 +629,21 @@ const COLORS = {
   },
 };
 
+// ── Carousel Colorways ────────────────────────────────────────────────────────
+const CAROUSEL_COLORWAYS = {
+  light:    COLORS.light,
+  dark:     COLORS.dark,
+  lime:     {
+    bg:'#EEFF8C', title:'#000d05', subtitle:'#676c79',
+    barFill:'#CCFFE0', barStroke:'#002910', barAccent:'#002910', barAccentStroke:'#000d05',
+    lineStroke:'#002910', axisTick:'#676c79', axisLine:'rgba(0,0,0,0.15)', gridLine:'rgba(0,0,0,0.08)',
+    tableBg:'#EEFF8C', tableRowAlt:'rgba(0,0,0,0.04)', tableHeader:'#000d05', tableHeaderText:'#EEFF8C',
+    tableText:'#000d05', tableSubText:'#676c79', pillBg:'#000d05', pillText:'#EEFF8C',
+    logoFill:'#001408', valueText:'#000d05', splitPanelBg:'#002910',
+  },
+  midnight: { ...COLORS.dark, bg:'#000d05', splitPanelBg:'#001a0d' },
+};
+
 // ── Paintings ─────────────────────────────────────────────────────────────────
 const PAINTINGS = [
   { key: 'bierstadt-sierra',   label: 'Sierra',      file: 'paintings/bierstadt-sierra.jpg',   overlay: 0.28 },
@@ -496,7 +660,6 @@ const paintingCache = {};
 function prefetchPaintings() {
   return Promise.all(PAINTINGS.map(p => new Promise(resolve => {
     const img = new Image();
-    img.crossOrigin = 'anonymous';
     img.onload = () => {
       const cv = document.createElement('canvas');
       cv.width = img.naturalWidth; cv.height = img.naturalHeight;
@@ -878,7 +1041,7 @@ function buildSplitTitleSVG(title, panelW, H, titleColor) {
 function buildPaintingBackground(key, W, H, forExport) {
   const p = PAINTINGS.find(x => x.key === key);
   if (!p) return '';
-  const href = forExport ? (paintingCache[key] || p.file) : p.file;
+  const href = paintingCache[key] || p.file;
   const overlayAlpha = p.overlay;
   return `<image href="${href}" x="0" y="0" width="${W}" height="${H}" preserveAspectRatio="xMidYMid slice"/>
   <rect width="${W}" height="${H}" fill="rgba(0,0,0,${overlayAlpha})"/>`;
@@ -1040,7 +1203,9 @@ function render() {
 }
 
 // ── Export ────────────────────────────────────────────────────────────────────
-function downloadPNG() {
+
+// Shared SVG builder — used by downloadPNG and window.__exportToDataURL
+function buildExportSVGStr() {
   const W = state.exportW, H = state.exportH;
   const C = state.paintingKey ? getPaintingColors() : COLORS[state.colorMode];
   const title = document.getElementById('chart-title').value || defaultTitles[state.chartType];
@@ -1052,10 +1217,7 @@ function downloadPNG() {
   const hiVal = document.getElementById('highlight-select').value;
   const hiIdx = hiVal === 'max' ? -1 : parseInt(hiVal);
 
-  // Render at full export resolution (scale = exportW / 800)
   const VW = 800, VH = 800 * H / W;
-
-  // Safe zone for 4:5 portrait (Instagram)
   const is45 = H === 1350;
   const extraTop = is45 ? Math.round(VH * 0.13) : 0;
   const extraBottom = is45 ? Math.round(VH * 0.13) : 0;
@@ -1096,21 +1258,24 @@ function downloadPNG() {
   }
 
   const borderStroke = `<rect x="0.5" y="0.5" width="${VW - 1}" height="${VH - 1}" fill="none" stroke="#00FF64" stroke-width="1"/>`;
-
   const svgStr = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${VW} ${VH}" width="${W}" height="${H}">
   ${backgroundLayer}
   ${svgContent}
   ${borderStroke}
 </svg>`;
 
+  return { svgStr, W, H };
+}
+
+function downloadPNG() {
+  const { svgStr, W, H } = buildExportSVGStr();
   const blob = new Blob([svgStr], { type: 'image/svg+xml' });
   const url = URL.createObjectURL(blob);
   const img = new Image();
   img.onload = () => {
     const cv = document.createElement('canvas');
     cv.width = W; cv.height = H;
-    const ctx = cv.getContext('2d');
-    ctx.drawImage(img, 0, 0, W, H);
+    cv.getContext('2d').drawImage(img, 0, 0, W, H);
     URL.revokeObjectURL(url);
     const a = document.createElement('a');
     a.download = `airops-dataviz-${state.chartType}-${W}x${H}.png`;
@@ -1121,6 +1286,24 @@ function downloadPNG() {
   };
   img.src = url;
 }
+
+// Used by the /api/dataviz serverless function via Puppeteer page.evaluate()
+window.__exportToDataURL = function() {
+  return new Promise(resolve => {
+    const { svgStr, W, H } = buildExportSVGStr();
+    const blob = new Blob([svgStr], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => {
+      const cv = document.createElement('canvas');
+      cv.width = W; cv.height = H;
+      cv.getContext('2d').drawImage(img, 0, 0, W, H);
+      URL.revokeObjectURL(url);
+      resolve(cv.toDataURL('image/png'));
+    };
+    img.src = url;
+  });
+};
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function escSVG(str) {
@@ -1202,7 +1385,351 @@ function renderPie(data, C, W, H, cfg) {
   return `${slices}${labels_svg}${legend}`;
 }
 
-const CHART_NAMES = { bar: 'Bar Chart', line: 'Line Chart', stat: 'Stat', ranked: 'Ranked', table: 'Table', pie: 'Pie Chart' };
+// ── Carousel render functions ─────────────────────────────────────────────────
+
+function renderCarouselTitleSlide(slide, idx, total, C, W, H) {
+  const title = slide.title || 'Your Headline Here';
+  const subcopy = slide.subcopy || '';
+  const fontSize = Math.min(W * 0.085, 72);
+  const maxWidth = W - 80;
+  const lines = wrapTextMulti(title, maxWidth, fontSize, 4, 0.50);
+  const lineH = fontSize * 1.2;
+  const totalTitleH = lines.length * lineH;
+  const titleY = H * 0.42 - totalTitleH / 2 + fontSize;
+  const tspans = lines.map((l, i) => `<tspan x="40" dy="${i === 0 ? 0 : lineH}">${escSVG(l)}</tspan>`).join('');
+  let out = `<text x="40" y="${Math.round(titleY)}" font-family="'Serrif VF',Georgia,serif" font-size="${fontSize}" font-weight="400" letter-spacing="-0.02em" fill="${C.title}">${tspans}</text>`;
+
+  if (subcopy) {
+    const subY = Math.round(titleY + totalTitleH + 24);
+    const subLines = wrapTextMulti(subcopy, maxWidth, 24, 3, 0.48);
+    const subTspans = subLines.map((l, i) => `<tspan x="40" dy="${i === 0 ? 0 : 36}">${escSVG(l)}</tspan>`).join('');
+    out += `<text x="40" y="${subY}" font-family="'Saans','Helvetica Neue',sans-serif" font-size="24" font-weight="400" fill="${C.subtitle}">${subTspans}</text>`;
+  }
+
+  // Logo bottom-left
+  const logoW = W * 0.14;
+  const logoH = logoW * 252 / 784;
+  out += `<g transform="translate(40, ${H - 36 - logoH})">${logoSVG(C.logoFill, logoW)}</g>`;
+
+  // Slide counter bottom-right
+  out += `<text x="${W - 40}" y="${H - 30}" text-anchor="end" font-family="'Saans Mono','DM Mono',monospace" font-size="13" font-weight="500" letter-spacing="0.06em" fill="${C.subtitle}">${idx + 1} / ${total}</text>`;
+
+  return out;
+}
+
+function renderCarouselDataSlide(slide, idx, total, C, W, H) {
+  const header = slide.header || defaultTitles[slide.chartType] || 'Data';
+  const subhead = slide.subhead || '';
+  const rawData = slide.data || defaultData[slide.chartType] || '';
+  const data = parseData(rawData, slide.chartType);
+  const hiVal = slide.hiIdx ?? -1;
+
+  const { svg: titleBlock, extraPt: extraTitlePt } = buildTitleSVG(header, W, C, 0);
+  const { svg: subcopyBlock, height: subcopyH } = buildSubcopySVG(subhead, W, C, 52 + extraTitlePt);
+  const cfg = { colorMode: 'custom', highlightIndex: hiVal, ptOffset: extraTitlePt + subcopyH, extraTop: 0, extraBottom: 40 };
+
+  let chartBody = '';
+  if (slide.chartType === 'bar')    chartBody = renderBar(data, C, W, H, cfg);
+  if (slide.chartType === 'line')   chartBody = renderLine(data, C, W, H, cfg);
+  if (slide.chartType === 'ranked') chartBody = renderRanked(data, C, W, H, cfg);
+  if (slide.chartType === 'stat')   chartBody = renderStat(data, C, W, H, cfg);
+  if (slide.chartType === 'table')  chartBody = renderTable(data, C, W, H, cfg);
+  if (slide.chartType === 'pie')    chartBody = renderPie(data, C, W, H, cfg);
+
+  // Logo bottom-left
+  const logoW = W * 0.14;
+  const logoH = logoW * 252 / 784;
+  const logoBlock = `<g transform="translate(40, ${H - 36 - logoH})">${logoSVG(C.logoFill, logoW)}</g>`;
+
+  // Slide counter bottom-right
+  const counter = `<text x="${W - 40}" y="${H - 30}" text-anchor="end" font-family="'Saans Mono','DM Mono',monospace" font-size="13" font-weight="500" letter-spacing="0.06em" fill="${C.subtitle}">${idx + 1} / ${total}</text>`;
+
+  return `${titleBlock}${subcopyBlock}${chartBody}${logoBlock}${counter}`;
+}
+
+function renderCarouselCTASlide(slide, idx, total, C, W, H) {
+  const label    = slide.label       || '';
+  const headline = slide.headline    || 'Ready to get started?';
+  const subhead  = slide.subheadline || '';
+  const subcopy  = slide.subcopy     || '';
+  const cta      = slide.cta         || 'Book a Demo';
+  const cta2     = slide.ctaSecondary || '';
+
+  // Always dark brand style
+  const TITLE  = '#f8fffa';
+  const SUB    = 'rgba(255,255,255,0.60)';
+  const BORDER = '#057a28';
+
+  const ARROW_PATH = 'M1.99974 13.0001L1.9996 11.0002L18.1715 11.0002L14.2218 7.05044L15.636 5.63623L22 12.0002L15.636 18.3642L14.2218 16.9499L18.1716 13.0002L1.99974 13.0001Z';
+  const ASC = 0.80; // arrow scale
+  const ANW = 24 * ASC; // arrow natural width after scale
+
+  // Helper: text + arrow centered in a button
+  const btnLabel = (text, fill, cx, cy, sz = 20) => {
+    const cw = sz * 0.52;
+    const tw = text.length * cw;
+    const gap = 10;
+    const totalW = tw + gap + ANW;
+    const tx = cx - totalW / 2;
+    const ax = tx + tw + gap;
+    const ay = cy - (24 * ASC) / 2;
+    return `<text x="${tx}" y="${cy + sz * 0.37}" font-family="'Saans','Helvetica Neue',sans-serif" font-size="${sz}" font-weight="500" fill="${fill}">${escSVG(text)}</text><g transform="translate(${ax},${ay}) scale(${ASC})"><path d="${ARROW_PATH}" fill="${fill}"/></g>`;
+  };
+
+  let out = '';
+
+  // Inner border
+  out += `<rect x="12" y="12" width="${W-24}" height="${H-24}" fill="none" stroke="${BORDER}" stroke-width="1"/>`;
+
+  // Badge at top center
+  if (label) {
+    const badgeTxt = label.toUpperCase();
+    const badgeW = Math.max(badgeTxt.length * 8 + 40, 80);
+    const badgeH = 30;
+    out += `<rect x="${W/2 - badgeW/2}" y="56" width="${badgeW}" height="${badgeH}" rx="5" fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="1"/>`;
+    out += `<text x="${W/2}" y="${56 + badgeH * 0.66}" text-anchor="middle" font-family="'Saans Mono','DM Mono',monospace" font-size="12" font-weight="500" letter-spacing="0.08em" fill="rgba(255,255,255,0.60)">${escSVG(badgeTxt)}</text>`;
+  }
+
+  // Headline — two lines, line1 serif + line2 sans
+  const fontSize = Math.min(W * 0.090, 76);
+  const maxWidth = W - 100;
+  const lineH = fontSize * 1.05;
+  let y = label ? H * 0.30 : H * 0.28;
+
+  if (headline) {
+    const lines1 = wrapTextMulti(headline, maxWidth, fontSize, 3, 0.50);
+    const ts1 = lines1.map((l, i) => `<tspan x="${W/2}" dy="${i === 0 ? 0 : lineH}">${escSVG(l)}</tspan>`).join('');
+    out += `<text x="${W/2}" y="${Math.round(y)}" text-anchor="middle" font-family="'Serrif VF',Georgia,serif" font-size="${fontSize}" font-weight="400" letter-spacing="-0.03em" fill="${TITLE}">${ts1}</text>`;
+    y += lines1.length * lineH;
+  }
+  if (subhead) {
+    const lines2 = wrapTextMulti(subhead, maxWidth, fontSize, 2, 0.50);
+    const ts2 = lines2.map((l, i) => `<tspan x="${W/2}" dy="${i === 0 ? 0 : lineH}">${escSVG(l)}</tspan>`).join('');
+    out += `<text x="${W/2}" y="${Math.round(y)}" text-anchor="middle" font-family="'Saans','Helvetica Neue',sans-serif" font-size="${fontSize}" font-weight="400" letter-spacing="-0.02em" fill="${TITLE}">${ts2}</text>`;
+    y += lines2.length * lineH;
+  }
+
+  // Body copy
+  if (subcopy) {
+    y += 28;
+    const subLines = wrapTextMulti(subcopy, maxWidth - 60, 20, 3, 0.48);
+    const subTs = subLines.map((l, i) => `<tspan x="${W/2}" dy="${i === 0 ? 0 : 30}">${escSVG(l)}</tspan>`).join('');
+    out += `<text x="${W/2}" y="${Math.round(y)}" text-anchor="middle" font-family="'Saans','Helvetica Neue',sans-serif" font-size="20" font-weight="400" fill="${SUB}">${subTs}</text>`;
+    y += subLines.length * 30;
+  }
+
+  // Buttons — pill shape
+  const btnY = Math.max(y + 48, H * 0.60);
+  const btnH = 64;
+  const btnRx = btnH / 2;
+
+  if (cta2) {
+    const gap = 16;
+    const btnW = Math.min((W - 80 - gap) / 2, 300);
+    const startX = W / 2 - (btnW * 2 + gap) / 2;
+    out += `<rect x="${startX}" y="${btnY}" width="${btnW}" height="${btnH}" rx="${btnRx}" fill="#00ff64"/>`;
+    out += btnLabel(cta, '#002910', startX + btnW / 2, btnY + btnH / 2);
+    const b2x = startX + btnW + gap;
+    out += `<rect x="${b2x}" y="${btnY}" width="${btnW}" height="${btnH}" rx="${btnRx}" fill="rgba(0,0,0,0.30)" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>`;
+    out += btnLabel(cta2, '#f8fffa', b2x + btnW / 2, btnY + btnH / 2);
+  } else {
+    const btnW = Math.min(W * 0.55, 340);
+    const btnX = W / 2 - btnW / 2;
+    out += `<rect x="${btnX}" y="${btnY}" width="${btnW}" height="${btnH}" rx="${btnRx}" fill="#00ff64"/>`;
+    out += btnLabel(cta, '#002910', W / 2, btnY + btnH / 2);
+  }
+
+  // Logo bottom-left
+  const logoW = W * 0.14;
+  const logoH = logoW * 252 / 784;
+  out += `<g transform="translate(40, ${H - 36 - logoH})">${logoSVG('#ffffff', logoW)}</g>`;
+
+  // Slide counter bottom-right
+  out += `<text x="${W-40}" y="${H-30}" text-anchor="end" font-family="'Saans Mono','DM Mono',monospace" font-size="13" font-weight="500" letter-spacing="0.06em" fill="rgba(255,255,255,0.40)">${idx + 1} / ${total}</text>`;
+
+  return out;
+}
+
+function buildCarouselSlideSVG(slide, idx, W, H, forExport = false) {
+  const total = state.carouselSlides.length;
+  const C = CAROUSEL_COLORWAYS[state.carouselColorway];
+  const bgColor = slide.type === 'cta' ? '#002910' : C.bg;
+  const bgRect = `<rect width="${W}" height="${H}" fill="${bgColor}"/>`;
+  const border = `<rect x="0.5" y="0.5" width="${W-1}" height="${H-1}" fill="none" stroke="#00FF64" stroke-width="1"/>`;
+
+  // Next arrow (uploaded arrow-right-long-line icon) — all slides except last
+  const isLast = idx === total - 1;
+  const arrowX = W - 38, arrowY = H / 2;
+  const circleStroke = slide.type === 'cta' ? 'rgba(255,255,255,0.25)' : C.subtitle;
+  const arrowFill   = slide.type === 'cta' ? 'rgba(255,255,255,0.70)' : C.title;
+  const s = 0.72, ax = arrowX - 12 * s, ay = arrowY - 12 * s;
+  const nextArrow = !isLast && slide.type !== 'cta' ? `<g opacity="0.45">
+    <circle cx="${arrowX}" cy="${arrowY}" r="22" fill="none" stroke="${circleStroke}" stroke-width="1.5"/>
+    <g transform="translate(${ax},${ay}) scale(${s})"><path d="M1.99974 13.0001L1.9996 11.0002L18.1715 11.0002L14.2218 7.05044L15.636 5.63623L22 12.0002L15.636 18.3642L14.2218 16.9499L18.1716 13.0002L1.99974 13.0001Z" fill="${arrowFill}"/></g>
+  </g>` : '';
+
+  let body = '';
+  if (slide.type === 'title') body = renderCarouselTitleSlide(slide, idx, total, C, W, H);
+  else if (slide.type === 'cta') body = renderCarouselCTASlide(slide, idx, total, C, W, H);
+  else body = renderCarouselDataSlide(slide, idx, total, C, W, H);
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">
+  ${bgRect}${body}${nextArrow}${border}
+</svg>`;
+}
+
+function renderCarouselPreview() {
+  const W = 800, H = 800; // always square
+  const slide = state.carouselSlides[state.carouselActiveSlide];
+  const svg = buildCarouselSlideSVG(slide, state.carouselActiveSlide, W, H, false);
+  const canvas = document.getElementById('chart-canvas');
+  canvas.innerHTML = svg;
+  // Scale to fit stage
+  const stage = document.getElementById('preview-stage');
+  const stageW = stage.clientWidth - 64, stageH = stage.clientHeight - 64;
+  const scale = Math.min(stageW / W, stageH / H, 1);
+  canvas.style.width = W * scale + 'px';
+  canvas.style.height = H * scale + 'px';
+  canvas.querySelector('svg').setAttribute('width', W * scale);
+  canvas.querySelector('svg').setAttribute('height', H * scale);
+  // Topbar
+  const total = state.carouselSlides.length;
+  document.getElementById('preview-dims').textContent = '1080 × 1080';
+  document.getElementById('preview-info').textContent = `Slide ${state.carouselActiveSlide + 1} of ${total} · Carousel`;
+}
+
+// ── Slide list management ─────────────────────────────────────────────────────
+
+function rebuildSlideList() {
+  const list = document.getElementById('carousel-slide-list');
+  const slides = state.carouselSlides;
+  list.innerHTML = slides.map((s, i) => {
+    const isActive = i === state.carouselActiveSlide;
+    const label = s.type === 'title' ? 'Cover' : s.type === 'cta' ? (s.headline || 'CTA Slide') : (s.header || defaultTitles[s.chartType] || 'Data Slide');
+    const canRemove = s.type !== 'title' && slides.length > 2;
+    return `<div class="carousel-slide-item${isActive ? ' active' : ''}" data-idx="${i}">
+      <span class="carousel-slide-num">${i + 1}</span>
+      <span class="carousel-slide-label">${escSVG(label)}</span>
+      ${canRemove ? `<button class="carousel-slide-remove" data-remove="${i}" title="Remove">×</button>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function updateCarouselHighlightSelect(slide) {
+  const sel = document.getElementById('carousel-highlight-select');
+  const rawData = slide.data || defaultData[slide.chartType] || '';
+  const data = parseData(rawData, slide.chartType);
+  const opts = ['<option value="max">Highest value (auto)</option>'];
+  if (data.labels) {
+    data.labels.forEach((l, i) => opts.push(`<option value="${i}">${escSVG(l)}</option>`));
+  }
+  sel.innerHTML = opts.join('');
+  sel.value = slide.hiIdx !== undefined && slide.hiIdx >= 0 ? slide.hiIdx : 'max';
+}
+
+function loadSlideToEditor(idx) {
+  state.carouselActiveSlide = idx;
+  const slide = state.carouselSlides[idx];
+  const titleEditor = document.getElementById('slide-editor-title');
+  const dataEditor  = document.getElementById('slide-editor-data');
+  const ctaEditor   = document.getElementById('slide-editor-cta');
+
+  titleEditor.style.display = 'none';
+  dataEditor.style.display  = 'none';
+  ctaEditor.style.display   = 'none';
+
+  if (slide.type === 'title') {
+    titleEditor.style.display = '';
+    document.getElementById('carousel-title').value = slide.title || '';
+    document.getElementById('carousel-subcopy').value = slide.subcopy || '';
+  } else if (slide.type === 'cta') {
+    ctaEditor.style.display = '';
+    document.getElementById('carousel-cta-label').value = slide.label || '';
+    document.getElementById('carousel-cta-headline').value = slide.headline || '';
+    document.getElementById('carousel-cta-subheadline').value = slide.subheadline || '';
+    document.getElementById('carousel-cta-subcopy').value = slide.subcopy || '';
+    document.getElementById('carousel-cta-btn').value = slide.cta || 'Book a Demo';
+    document.getElementById('carousel-cta-btn2').value = slide.ctaSecondary || '';
+  } else {
+    dataEditor.style.display = '';
+    document.getElementById('carousel-header').value = slide.header || '';
+    document.getElementById('carousel-subhead').value = slide.subhead || '';
+    document.getElementById('carousel-data-input').value = slide.data || defaultData[slide.chartType] || '';
+    document.getElementById('carousel-data-hint').textContent = dataHints[slide.chartType] || 'One per line — Label: Value';
+
+    document.querySelectorAll('.carousel-mini-chart-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.type === slide.chartType);
+    });
+
+    const showHi = ['bar', 'line', 'ranked'].includes(slide.chartType);
+    document.getElementById('carousel-highlight-group').style.display = showHi ? '' : 'none';
+    updateCarouselHighlightSelect(slide);
+  }
+}
+
+function syncSlideFromEditor() {
+  const idx = state.carouselActiveSlide;
+  const slide = state.carouselSlides[idx];
+  if (slide.type === 'title') {
+    slide.title = document.getElementById('carousel-title').value;
+    slide.subcopy = document.getElementById('carousel-subcopy').value;
+  } else if (slide.type === 'cta') {
+    slide.label = document.getElementById('carousel-cta-label').value;
+    slide.headline = document.getElementById('carousel-cta-headline').value;
+    slide.subheadline = document.getElementById('carousel-cta-subheadline').value;
+    slide.subcopy = document.getElementById('carousel-cta-subcopy').value;
+    slide.cta = document.getElementById('carousel-cta-btn').value;
+    slide.ctaSecondary = document.getElementById('carousel-cta-btn2').value;
+  } else {
+    slide.header = document.getElementById('carousel-header').value;
+    slide.subhead = document.getElementById('carousel-subhead').value;
+    slide.data = document.getElementById('carousel-data-input').value;
+    const hiVal = document.getElementById('carousel-highlight-select').value;
+    slide.hiIdx = hiVal === 'max' ? -1 : parseInt(hiVal);
+  }
+  renderCarouselPreview();
+  rebuildSlideList();
+}
+
+// ── PDF export ────────────────────────────────────────────────────────────────
+
+function svgToCanvasDataURL(svgStr, W, H) {
+  return new Promise(resolve => {
+    const blob = new Blob([svgStr], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => {
+      const cv = document.createElement('canvas');
+      cv.width = W; cv.height = H;
+      cv.getContext('2d').drawImage(img, 0, 0, W, H);
+      URL.revokeObjectURL(url);
+      resolve(cv.toDataURL('image/png'));
+    };
+    img.src = url;
+  });
+}
+
+async function downloadCarouselPDF() {
+  const { jsPDF } = window.jspdf;
+  // CTA slides always last in export order
+  const slides = [
+    ...state.carouselSlides.filter(s => s.type !== 'cta'),
+    ...state.carouselSlides.filter(s => s.type === 'cta'),
+  ];
+  const W = 1080, H = 1080, VW = 800, VH = 800;
+  const pdf = new jsPDF({ unit: 'px', format: [W, H], hotfixes: ['px_scaling'] });
+
+  for (let i = 0; i < slides.length; i++) {
+    const svgStr = buildCarouselSlideSVG(slides[i], i, VW, VH, false);
+    const dataURL = await svgToCanvasDataURL(svgStr, W, H);
+    if (i > 0) pdf.addPage([W, H]);
+    pdf.addImage(dataURL, 'PNG', 0, 0, W, H);
+  }
+  pdf.save('airops-carousel.pdf');
+  document.getElementById('download-btn').classList.remove('loading');
+  document.getElementById('download-btn').textContent = 'Download PDF';
+}
+
+const CHART_NAMES = { bar: 'Bar Chart', line: 'Line Chart', stat: 'Stat', ranked: 'Ranked', table: 'Table', pie: 'Pie Chart', carousel: 'Carousel' };
 const defaultTitles = {
   bar: 'AI Citations by Quarter',
   line: 'Visibility Growth Over Time',
@@ -1241,12 +1768,36 @@ function updateHighlightOptions() {
 }
 
 // ── Wire up controls ──────────────────────────────────────────────────────────
+const STANDARD_SECTION_IDS = ['section-content','section-data','section-layout','section-background','section-color-mode','section-export-size'];
+
+function showStandardSections() {
+  STANDARD_SECTION_IDS.forEach(id => { document.getElementById(id).style.display = ''; });
+  document.getElementById('carousel-panel').style.display = 'none';
+  document.getElementById('download-btn').innerHTML = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 6l3 3 3-3M2 11h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Download PNG`;
+}
+
+function showCarouselPanel() {
+  STANDARD_SECTION_IDS.forEach(id => { document.getElementById(id).style.display = 'none'; });
+  document.getElementById('carousel-panel').style.display = '';
+  document.getElementById('download-btn').innerHTML = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 6l3 3 3-3M2 11h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Download PDF`;
+}
+
 document.getElementById('chart-type-grid').addEventListener('click', e => {
   const btn = e.target.closest('.chart-type-btn');
   if (!btn) return;
   document.querySelectorAll('.chart-type-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   state.chartType = btn.dataset.type;
+
+  if (state.chartType === 'carousel') {
+    showCarouselPanel();
+    rebuildSlideList();
+    loadSlideToEditor(state.carouselActiveSlide);
+    renderCarouselPreview();
+    return;
+  }
+
+  showStandardSections();
   // Load default data for this type
   const di = document.getElementById('data-input');
   if (!di.dataset.userEdited) di.value = defaultData[state.chartType];
@@ -1294,8 +1845,91 @@ document.getElementById('download-btn').addEventListener('click', () => {
   const btn = document.getElementById('download-btn');
   btn.classList.add('loading');
   btn.textContent = 'Exporting...';
-  setTimeout(downloadPNG, 50);
+  if (state.chartType === 'carousel') {
+    downloadCarouselPDF();
+  } else {
+    setTimeout(downloadPNG, 50);
+  }
 });
+
+// ── Carousel event handlers ───────────────────────────────────────────────────
+
+document.getElementById('colorway-grid').addEventListener('click', e => {
+  const btn = e.target.closest('.colorway-btn');
+  if (!btn) return;
+  document.querySelectorAll('.colorway-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  state.carouselColorway = btn.dataset.colorway;
+  renderCarouselPreview();
+});
+
+document.getElementById('add-slide-btn').addEventListener('click', () => {
+  // Insert before the first CTA slide so CTAs always stay last
+  const firstCtaIdx = state.carouselSlides.findIndex(s => s.type === 'cta');
+  const insertAt = firstCtaIdx === -1 ? state.carouselSlides.length : firstCtaIdx;
+  const prevSlide = state.carouselSlides[insertAt - 1];
+  const ct = prevSlide?.chartType || 'bar';
+  state.carouselSlides.splice(insertAt, 0, { type: 'data', header: '', subhead: '', chartType: ct, data: defaultData[ct] || '' });
+  state.carouselActiveSlide = insertAt;
+  rebuildSlideList();
+  loadSlideToEditor(state.carouselActiveSlide);
+  renderCarouselPreview();
+});
+
+document.getElementById('carousel-slide-list').addEventListener('click', e => {
+  const removeBtn = e.target.closest('.carousel-slide-remove');
+  if (removeBtn) {
+    const removeIdx = parseInt(removeBtn.dataset.remove);
+    state.carouselSlides.splice(removeIdx, 1);
+    state.carouselActiveSlide = Math.min(state.carouselActiveSlide, state.carouselSlides.length - 1);
+    rebuildSlideList();
+    loadSlideToEditor(state.carouselActiveSlide);
+    renderCarouselPreview();
+    return;
+  }
+  const item = e.target.closest('.carousel-slide-item');
+  if (!item) return;
+  syncSlideFromEditor();
+  const idx = parseInt(item.dataset.idx);
+  state.carouselActiveSlide = idx;
+  rebuildSlideList();
+  loadSlideToEditor(idx);
+  renderCarouselPreview();
+});
+
+['carousel-title','carousel-subcopy','carousel-header','carousel-subhead','carousel-data-input',
+ 'carousel-cta-label','carousel-cta-headline','carousel-cta-subheadline','carousel-cta-subcopy',
+ 'carousel-cta-btn','carousel-cta-btn2'].forEach(id => {
+  document.getElementById(id).addEventListener('input', syncSlideFromEditor);
+});
+
+document.getElementById('add-cta-btn').addEventListener('click', () => {
+  state.carouselSlides.push({ type: 'cta', label: '', headline: '', subheadline: '', subcopy: '', cta: 'Book a Demo', ctaSecondary: '' });
+  state.carouselActiveSlide = state.carouselSlides.length - 1;
+  rebuildSlideList();
+  loadSlideToEditor(state.carouselActiveSlide);
+  renderCarouselPreview();
+});
+
+document.getElementById('carousel-chart-grid').addEventListener('click', e => {
+  const btn = e.target.closest('.carousel-mini-chart-btn');
+  if (!btn) return;
+  const slide = state.carouselSlides[state.carouselActiveSlide];
+  if (slide.type !== 'data') return;
+  slide.chartType = btn.dataset.type;
+  document.querySelectorAll('.carousel-mini-chart-btn').forEach(b => b.classList.toggle('active', b.dataset.type === slide.chartType));
+  document.getElementById('carousel-data-hint').textContent = dataHints[slide.chartType] || 'One per line — Label: Value';
+  const showHi = ['bar', 'line', 'ranked'].includes(slide.chartType);
+  document.getElementById('carousel-highlight-group').style.display = showHi ? '' : 'none';
+  if (!slide.data) {
+    slide.data = defaultData[slide.chartType] || '';
+    document.getElementById('carousel-data-input').value = slide.data;
+  }
+  updateCarouselHighlightSelect(slide);
+  renderCarouselPreview();
+});
+
+document.getElementById('carousel-highlight-select').addEventListener('change', syncSlideFromEditor);
 
 window.addEventListener('resize', render);
 
@@ -1330,13 +1964,57 @@ document.getElementById('painting-grid').addEventListener('click', e => {
   render();
 });
 
+// ── Query-param pre-population (used by /api/dataviz) ─────────────────────────
+// Accepts ?data=<base64-encoded-JSON> with keys:
+//   type, title, subcopy, subtitle, data, colorMode, layout, painting, w, h, showLogo, showSource
+function loadFromQuery() {
+  const raw = new URLSearchParams(window.location.search).get('data');
+  if (!raw) return false;
+  let p;
+  try { p = JSON.parse(decodeURIComponent(escape(atob(raw.replace(/ /g, '+'))))); } catch { return false; }
+
+  if (p.type && CHART_NAMES[p.type]) {
+    state.chartType = p.type;
+    document.querySelectorAll('.chart-type-btn').forEach(b => b.classList.toggle('active', b.dataset.type === p.type));
+    if (p.type === 'carousel') { showCarouselPanel(); } else { showStandardSections(); }
+    document.getElementById('data-hint').textContent = dataHints[p.type] || 'One per line — Label: Value';
+    document.getElementById('highlight-group').style.display = ['bar','line','ranked'].includes(p.type) ? '' : 'none';
+  }
+  if (p.title    !== undefined) document.getElementById('chart-title').value    = p.title;
+  if (p.subcopy  !== undefined) document.getElementById('chart-subcopy').value  = p.subcopy;
+  if (p.subtitle !== undefined) document.getElementById('chart-subtitle').value = p.subtitle;
+  if (p.data     !== undefined) { document.getElementById('data-input').value = p.data; document.getElementById('data-input').dataset.userEdited = '1'; }
+  if (p.colorMode && COLORS[p.colorMode]) {
+    state.colorMode = p.colorMode;
+    document.querySelectorAll('.mode-btn[data-mode]').forEach(b => b.classList.toggle('active', b.dataset.mode === p.colorMode));
+  }
+  if (p.layout && ['standard','split'].includes(p.layout)) {
+    state.layoutMode = p.layout;
+    document.querySelectorAll('#layout-grid .mode-btn').forEach(b => b.classList.toggle('active', b.dataset.layout === p.layout));
+  }
+  if (p.painting !== undefined) {
+    state.paintingKey = p.painting || null;
+    document.querySelectorAll('.painting-btn').forEach(b => b.classList.toggle('active', b.dataset.painting === (p.painting || 'none')));
+  }
+  if (p.w && p.h) {
+    state.exportW = p.w; state.exportH = p.h;
+    document.querySelectorAll('.size-btn').forEach(b => b.classList.toggle('active', parseInt(b.dataset.w) === p.w && parseInt(b.dataset.h) === p.h));
+  }
+  if (p.showLogo  !== undefined) document.getElementById('show-logo').checked   = !!p.showLogo;
+  if (p.showSource !== undefined) document.getElementById('show-source').checked = !!p.showSource;
+  updateHighlightOptions();
+  return true;
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 document.getElementById('data-input').value = defaultData.bar;
 document.getElementById('chart-title').value = '';
 document.getElementById('chart-subcopy').value = '';
 document.getElementById('chart-subtitle').value = '';
 updateHighlightOptions();
+loadFromQuery();
 prefetchPaintings().then(render);
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </body>
 </html>

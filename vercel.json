@@ -1,0 +1,8 @@
+{
+  "functions": {
+    "api/dataviz.js": {
+      "memory": 1024,
+      "maxDuration": 45
+    }
+  }
+}
