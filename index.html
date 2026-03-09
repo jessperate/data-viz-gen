@@ -1200,6 +1200,27 @@ function render() {
   // Update topbar
   document.getElementById('preview-dims').textContent = `${state.exportW} × ${state.exportH}`;
   document.getElementById('preview-info').textContent = `${CHART_NAMES[state.chartType]} · ${state.colorMode === 'light' ? 'Light' : 'Dark'}`;
+
+  // Encode full state into URL so slide-gen can parse it back
+  try {
+    const snap = {
+      type: state.chartType,
+      title: document.getElementById('chart-title').value,
+      subtitle: document.getElementById('chart-subtitle').value,
+      subcopy: document.getElementById('chart-subcopy').value,
+      data: document.getElementById('data-input').value,
+      colorMode: state.colorMode,
+      painting: state.paintingKey || '',
+      layout: state.layoutMode,
+      w: state.exportW,
+      h: state.exportH,
+      showLogo: document.getElementById('show-logo').checked,
+      showSource: document.getElementById('show-source').checked,
+      highlightIndex: (() => { const v = document.getElementById('highlight-select').value; return v === 'max' ? -1 : parseInt(v); })(),
+    };
+    const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(snap))));
+    history.replaceState(null, '', '?data=' + encoded);
+  } catch(e) {}
 }
 
 // ── Export ────────────────────────────────────────────────────────────────────
