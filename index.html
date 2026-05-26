@@ -1019,7 +1019,7 @@ function buildSubcopySVG(text, W, C, titleBottomY) {
   const y = titleBottomY + 32;
   const tspans = lines.map((l, i) => `<tspan x="40" dy="${i === 0 ? 0 : lineH}">${escSVG(l)}</tspan>`).join('');
   return {
-    svg: `<text x="40" y="${y}" font-family="'Saans','Helvetica Neue',sans-serif" font-size="${fontSize}" font-weight="400" fill="${C.subtitle}">${tspans}</text>`,
+    svg: `<text x="40" y="${y}" font-family="'Saans Mono','DM Mono',monospace" font-size="${fontSize}" font-weight="400" fill="${C.subtitle}">${tspans}</text>`,
     height: Math.round(lines.length * lineH + 24),
   };
 }
@@ -1424,7 +1424,7 @@ function renderCarouselTitleSlide(slide, idx, total, C, W, H) {
     const subY = Math.round(titleY + totalTitleH + 24);
     const subLines = wrapTextMulti(subcopy, maxWidth, 24, 3, 0.48);
     const subTspans = subLines.map((l, i) => `<tspan x="40" dy="${i === 0 ? 0 : 36}">${escSVG(l)}</tspan>`).join('');
-    out += `<text x="40" y="${subY}" font-family="'Saans','Helvetica Neue',sans-serif" font-size="24" font-weight="400" fill="${C.subtitle}">${subTspans}</text>`;
+    out += `<text x="40" y="${subY}" font-family="'Saans Mono','DM Mono',monospace" font-size="24" font-weight="400" fill="${C.subtitle}">${subTspans}</text>`;
   }
 
   // Logo bottom-left
@@ -1494,7 +1494,7 @@ function renderCarouselCTASlide(slide, idx, total, C, W, H) {
     const tx = cx - totalW / 2;
     const ax = tx + tw + gap;
     const ay = cy - (24 * ASC) / 2;
-    return `<text x="${tx}" y="${cy + sz * 0.37}" font-family="'Saans','Helvetica Neue',sans-serif" font-size="${sz}" font-weight="500" fill="${fill}">${escSVG(text)}</text><g transform="translate(${ax},${ay}) scale(${ASC})"><path d="${ARROW_PATH}" fill="${fill}"/></g>`;
+    return `<text x="${tx}" y="${cy + sz * 0.37}" font-family="'Saans Mono','DM Mono',monospace" font-size="${sz}" font-weight="500" fill="${fill}">${escSVG(text)}</text><g transform="translate(${ax},${ay}) scale(${ASC})"><path d="${ARROW_PATH}" fill="${fill}"/></g>`;
   };
 
   let out = '';
@@ -1526,7 +1526,7 @@ function renderCarouselCTASlide(slide, idx, total, C, W, H) {
   if (subhead) {
     const lines2 = wrapTextMulti(subhead, maxWidth, fontSize, 2, 0.50);
     const ts2 = lines2.map((l, i) => `<tspan x="${W/2}" dy="${i === 0 ? 0 : lineH}">${escSVG(l)}</tspan>`).join('');
-    out += `<text x="${W/2}" y="${Math.round(y)}" text-anchor="middle" font-family="'Saans','Helvetica Neue',sans-serif" font-size="${fontSize}" font-weight="400" letter-spacing="-0.02em" fill="${TITLE}">${ts2}</text>`;
+    out += `<text x="${W/2}" y="${Math.round(y)}" text-anchor="middle" font-family="'Serrif VF',Georgia,serif" font-size="${fontSize}" font-weight="400" letter-spacing="-0.02em" fill="${TITLE}">${ts2}</text>`;
     y += lines2.length * lineH;
   }
 
@@ -1535,7 +1535,7 @@ function renderCarouselCTASlide(slide, idx, total, C, W, H) {
     y += 28;
     const subLines = wrapTextMulti(subcopy, maxWidth - 60, 20, 3, 0.48);
     const subTs = subLines.map((l, i) => `<tspan x="${W/2}" dy="${i === 0 ? 0 : 30}">${escSVG(l)}</tspan>`).join('');
-    out += `<text x="${W/2}" y="${Math.round(y)}" text-anchor="middle" font-family="'Saans','Helvetica Neue',sans-serif" font-size="20" font-weight="400" fill="${SUB}">${subTs}</text>`;
+    out += `<text x="${W/2}" y="${Math.round(y)}" text-anchor="middle" font-family="'Saans Mono','DM Mono',monospace" font-size="20" font-weight="400" fill="${SUB}">${subTs}</text>`;
     y += subLines.length * 30;
   }
 
